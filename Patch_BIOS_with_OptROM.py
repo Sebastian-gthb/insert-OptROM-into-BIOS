@@ -15,6 +15,7 @@
 #   * calculating the jumpdestinations insted hard coded <-- solved!
 #   * searching for free space in original BIOS ROM
 #   * placing the XTIDE ROM and the subfunction automaticly into free space in the BIOS ROM
+#   * set the right checksum of the ROM
 #   * error handling if files ar missing 
 
 
@@ -80,6 +81,14 @@ print("---------------Sprungberechnungen-------------")
 byte_content_SubFunc = bytearray(b'\x60\x9C\x9A\x03\x00\x00\x00\x9D\x61\xE8\x00\x00\xC3')
 #                                                       ^^^^^^^             ^^^^^^^
 #                                             Segment of OptROM             distance to the orig. SubFunction
+#example:
+#f000:dc50    60            pusha
+#f000:dc51    9C            pushf
+#f000:dc52    9A030000f2    call far f200:0003
+#f000:dc57    9D            popf
+#f000:dc58    61            popa
+#f000:dc59    E8CCB1        call near f000:8E28
+#f000:dc5C    C3            ret
 
 # calculating the segment adress of the Option ROM and implementing it in the new SubFunction
 print("   BIOS ROM size =", len(byte_content_BIOS), "byte")
@@ -156,10 +165,6 @@ while i < len(byte_content_XTIDE):
 
 if warnung != 0: print(" ")
 
-#file3 = open('BIOS+XTIDE.BIN', "wb")
-#file3.write(bytes(byte_content_file1))
-#file3.close()
-
 
 # STEP 4 ------------------------------------------------
 print("Insert subfunction to call XTIDE ROM...")
@@ -215,8 +220,6 @@ file6.close()
 
 # STEP 7 ------------------------------------------------
 print("Split BIOS in to HI an LO file...")
-
-laenge = -1   #Anzahl zu lesender Bytes pro Datei ( -1 bedeutet ganze Datei lesen)
 
 byte_content_BIOS_LO_new = bytearray()
 byte_content_BIOS_HI_new = bytearray()
