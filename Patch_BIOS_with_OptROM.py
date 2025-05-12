@@ -4,7 +4,6 @@
 #   * BIOS_HI.BIN file with the dump of the HI or Even part of the BIOS
 #   * BIOS_LO.BIN file with the dump of the LO or Odd  part of the BIOS
 #   * XTIDE.BIN with a configured XTIDE ROM image
-
 #
 # With all these files in one directory you must only execute the script and you get a patches new BIOS file ("BIOS+XTIDE.BIN") and the HI and LO part for the EPROMs ("BIOS+XTIDE_HI.BIN" and "BIOS+XTIDE_LO.BIN").
 #
@@ -17,11 +16,12 @@
 #   * placing the XTIDE ROM and the subfunction automaticly into free space in the BIOS ROM
 #   * set the right checksum of the ROM
 #   * error handling if files ar missing 
+#   * check if the Option ROM is already insert in the BIOS
 
 
-offsetOptROM  = 0x2000   # Possition an der der XTIDE Code in das BIOS ROM eingefüght werden soll. (Größe 8kB!) It must be a multiple of 16!
-offsetSubFunc = 0xDC50   # Possition an der der Code für die SubFunction in das BIOS ROM eingefüght werden soll
 offsetCall    = 0x8B4F   # Position des Call zu einer Subfunction, an der wir die Zieladresse austauschen um die eingefüghte Subfunction aufzurufen (8B4F). Achtung Sprungmarken im Code sind aktuell nox fix und damit schlecht änderbar!
+offsetOptROM  = 0x2000   # Position an der der XTIDE Code in das BIOS ROM eingefüght werden soll. (Größe 8kB!) It must be a multiple of 16!
+offsetSubFunc = 0xDC50   # Position an der der Code für die SubFunction in das BIOS ROM eingefüght werden soll
 
 
 import os
@@ -68,15 +68,38 @@ while i < len(byte_content_BIOS_LO):
     byte_content_BIOS.append(byte_content_BIOS_HI[i])
     i += 1
 
-# we can save the merged BIOS if needed
+# we can save the merged original BIOS if needed
 #file3 = open('BIOS.BIN', "wb")
 #file3.write(bytes(byte_content_BIOS))
 #file3.close()
 
 
+# STEP N ------------------------------------------------
+print("Search for free space in the BIOS ROM... (actualy only for information)")
+
+blocksize = 32
+i = 0
+countFreeROM = 0
+startblock = 0
+
+while i < len(byte_content_BIOS):
+   if byte_content_BIOS[i]==0:
+       if startblock==0: startblock = i
+       countFreeROM += 1
+       i += 1
+   else:
+       if countFreeROM >= blocksize:
+           print("free space found at offset", hex(startblock), "with size", countFreeROM)
+       countFreeROM = 0
+       startblock = 0
+       i >>= 5     #unset the lower 4 bits
+       i <<= 5
+       i += blocksize
 
 
-print("---------------Sprungberechnungen-------------")
+# STEP N ------------------------------------------------
+print("calculating all the call destinations...")
+
 # code for the SubFunc to call the Option ROM with blanced call destinations
 byte_content_SubFunc = bytearray(b'\x60\x9C\x9A\x03\x00\x00\x00\x9D\x61\xE8\x00\x00\xC3')
 #                                                       ^^^^^^^             ^^^^^^^
@@ -121,8 +144,6 @@ print("      low  byte =", hex(callDistanceToNewSubFunc & 0xFF))
 callDistanceToNewSubFunc >>= 8
 byte_content_BIOS[offsetCall+2] = callDistanceToNewSubFunc & 0xFF
 print("      high byte =", hex(callDistanceToNewSubFunc & 0xFF))
-
-input("-------Sprungberechnung-fertig----------------")
 
 
 
