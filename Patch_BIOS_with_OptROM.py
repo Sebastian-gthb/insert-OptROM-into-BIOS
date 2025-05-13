@@ -3,7 +3,7 @@
 #   * the script him self in the directory
 #   * BIOS_HI.BIN file with the dump of the HI or Even part of the BIOS
 #   * BIOS_LO.BIN file with the dump of the LO or Odd  part of the BIOS
-#   * XTIDE.BIN with a configured XTIDE ROM image
+#   * OptROM.BIN with a option ROM image like a configured XTIDE ROM image
 #
 # With all these files in one directory you must only execute the script and you get a patches new BIOS file ("BIOS+XTIDE.BIN") and the HI and LO part for the EPROMs ("BIOS+XTIDE_HI.BIN" and "BIOS+XTIDE_LO.BIN").
 #
@@ -12,16 +12,16 @@
 #
 # ToDo's:
 #   * calculating the jumpdestinations insted hard coded <-- solved!
-#   * searching for free space in original BIOS ROM
-#   * placing the XTIDE ROM and the subfunction automaticly into free space in the BIOS ROM
+#   * searching for free space in original BIOS ROM <-- partly solfed
+#   * placing the XTIDE ROM and the subfunction automaticly into free space in the BIOS ROM  <-- partly solfed
 #   * set the right checksum of the ROM
 #   * error handling if files ar missing 
 #   * check if the Option ROM is already insert in the BIOS
 
 
 offsetCall    = 0x8B4F   # Position des Call zu einer Subfunction, an der wir die Zieladresse austauschen um die eingefüghte Subfunction aufzurufen (8B4F). Achtung Sprungmarken im Code sind aktuell nox fix und damit schlecht änderbar!
-offsetOptROM  = 0x2000   # Position an der der XTIDE Code in das BIOS ROM eingefüght werden soll. (Größe 8kB!) It must be a multiple of 16!
 offsetSubFunc = 0xDC50   # Position an der der Code für die SubFunction in das BIOS ROM eingefüght werden soll
+
 
 
 import os
@@ -31,30 +31,23 @@ os.chdir(workdir)
 
 print("Working directory =", workdir)
 
-# STEP 0 ------------------------------------------------
-print("Checking options...")
-
-#check if the offsetOptROM is a multiple of 16 (Segment adress is divided by 16)
-offsetOptROMtest = offsetOptROM >> 4
-offsetOptROMtest <<= 4
-if offsetOptROM - offsetOptROMtest != 0:
-    print("ERROR: offset for the Option ROM (", hex(offsetOptROM), ") is not a multiple of 16!")
-    input("Abort!")
-    sys.exit()
-
-
 
 # STEP 1 ------------------------------------------------
-print("Loding BIOS HI and LO part...")
+print("Loding BIOS HI and LO part and option ROM...")
 
 #File 1 = Lo oder OD Chip
 file1 = open('BIOS_LO.BIN', "rb")
 #File 2 = Hi oder Ev Chip
 file2 = open('BIOS_HI.BIN', "rb")
+#File 3 = Option ROM Code
+file3 = open('OptROM.BIN', "rb")
 byte_content_BIOS_LO = bytearray(file1.read(-1))
 byte_content_BIOS_HI = bytearray(file2.read(-1))
+byte_content_OptROM  = bytearray(file3.read(-1))
 file1.close()
 file2.close()
+file3.close()
+
 
 
 # STEP 2 ------------------------------------------------
@@ -69,18 +62,21 @@ while i < len(byte_content_BIOS_LO):
     i += 1
 
 # we can save the merged original BIOS if needed
-#file3 = open('BIOS.BIN', "wb")
-#file3.write(bytes(byte_content_BIOS))
-#file3.close()
+#file4 = open('BIOS.BIN', "wb")
+#file4.write(bytes(byte_content_BIOS))
+#file4.close()
 
 
-# STEP N ------------------------------------------------
-print("Search for free space in the BIOS ROM... (actualy only for information)")
+# STEP 3 ------------------------------------------------
+print("Search for free space in the BIOS ROM...")
 
 blocksize = 32
 i = 0
 countFreeROM = 0
 startblock = 0
+optROMsize = len(byte_content_OptROM)
+offsetOptROM  = 0xFFFFF   # init variable to find out that we have found a place for the option ROM
+
 
 while i < len(byte_content_BIOS):
    if byte_content_BIOS[i]==0:
@@ -88,16 +84,24 @@ while i < len(byte_content_BIOS):
        countFreeROM += 1
        i += 1
    else:
+       
        if countFreeROM >= blocksize:
            print("free space found at offset", hex(startblock), "with size", countFreeROM)
+           if countFreeROM >= optROMsize:
+              print("space for option ROM found at offset", hex(startblock))
+              offsetOptROM = startblock
        countFreeROM = 0
        startblock = 0
        i >>= 5     #unset the lower 4 bits
        i <<= 5
        i += blocksize
 
+if offsetOptROM == 0xFFFFF:
+    print("ERROR: not enough empty space found in BIOS ROM to insert the option ROM")
+    input("Abort!")
+    sys.exit()
 
-# STEP N ------------------------------------------------
+# STEP 4 ------------------------------------------------
 print("calculating all the call destinations...")
 
 # code for the SubFunc to call the Option ROM with blanced call destinations
@@ -147,30 +151,25 @@ print("      high byte =", hex(callDistanceToNewSubFunc & 0xFF))
 
 
 
-# STEP 3 ------------------------------------------------
+# STEP 5 ------------------------------------------------
 print("Insert XTIDE ROM into BIOS...")
 
 # now we need "offsetOptROM"
-
-#File 4 = XTIDE ROM Code
-file4 = open('XTIDE.BIN', "rb")
-byte_content_XTIDE = bytearray(file4.read(-1))
-file4.close()
 
 
 i = 0
 warnung = 0
 position = offsetOptROM
 FirstSameByte = byte_content_BIOS[position]
-print("   inserting", len(byte_content_XTIDE), "byte code in", len(byte_content_BIOS), "byte of BIOS code, at position", hex(offsetOptROM))
+print("   inserting", len(byte_content_OptROM), "byte code in", len(byte_content_BIOS), "byte of BIOS code, at position", hex(offsetOptROM))
 
-if offsetOptROM + len(byte_content_XTIDE) > len(byte_content_BIOS):
+if offsetOptROM + len(byte_content_OptROM) > len(byte_content_BIOS):
     print("ERROR: offset + XTIDE-ROM length to long for BIOS")
     input("Abort!")
     sys.exit()
 
 
-while i < len(byte_content_XTIDE):
+while i < len(byte_content_OptROM):
 
     if byte_content_BIOS[position] != FirstSameByte:
         if warnung == 0:
@@ -179,7 +178,7 @@ while i < len(byte_content_XTIDE):
         print(position, " ", end='')
 
 
-    byte_content_BIOS[position] = byte_content_XTIDE[i]
+    byte_content_BIOS[position] = byte_content_OptROM[i]
 
     i += 1
     position += 1
@@ -187,7 +186,7 @@ while i < len(byte_content_XTIDE):
 if warnung != 0: print(" ")
 
 
-# STEP 4 ------------------------------------------------
+# STEP 6 ------------------------------------------------
 print("Insert subfunction to call XTIDE ROM...")
 
 # now we need "offsetSubFunc"
@@ -231,15 +230,15 @@ while i < len(byte_content_SubFunc):
 if warnung != 0: print(" ")
 
 
-# STEP 6 ------------------------------------------------
+# STEP 7 ------------------------------------------------
 print("Save patched BIOS to file...")
 
-file6 = open('BIOS+XTIDE.BIN', "wb")
+file6 = open('BIOS+OPT.BIN', "wb")
 file6.write(bytes(byte_content_BIOS))
 file6.close()
 
 
-# STEP 7 ------------------------------------------------
+# STEP 8 ------------------------------------------------
 print("Split BIOS in to HI an LO file...")
 
 byte_content_BIOS_LO_new = bytearray()
@@ -253,10 +252,9 @@ while i < len(byte_content_BIOS):
     i += 1
 
 
-#File 7 = Lo oder OD Chip
-file7 = open('BIOS+XTIDE_LO.BIN', "wb")
-#File 8 = Hi oder Ev Chip
-file8 = open('BIOS+XTIDE_HI.BIN', "wb")
+
+file7 = open('BIOS+OPT_LO.BIN', "wb")   # Lo oder OD Chip
+file8 = open('BIOS+OPT_HI.BIN', "wb")   # Hi oder Ev Chip
 file7.write(bytes(byte_content_BIOS_LO_new))
 file8.write(bytes(byte_content_BIOS_HI_new))
 file7.close()
