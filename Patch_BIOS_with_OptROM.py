@@ -12,8 +12,8 @@
 #
 # ToDo's:
 #   * calculating the jumpdestinations insted hard coded <-- solved!
-#   * searching for free space in original BIOS ROM <-- partly solfed
-#   * placing the XTIDE ROM and the subfunction automaticly into free space in the BIOS ROM  <-- partly solfed
+#   * searching for free space in original BIOS ROM <-- solved!
+#   * placing the option ROM and the subfunction automaticly into free space in the BIOS ROM  <-- partly solved
 #   * set the right checksum of the ROM
 #   * error handling if files ar missing 
 #   * check if the Option ROM is already insert in the BIOS
