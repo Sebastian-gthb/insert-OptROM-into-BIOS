@@ -1,8 +1,8 @@
 # This code implementing the option ROM (like XTIDE) into a BIOS ROM. This code is for a tow BIOS ROM chip (HI and LO).
 # To run you need the following files:
 #   * the script him self in the directory
-#   * BIOS_HI.BIN file with the dump of the HI or Even part of the BIOS
-#   * BIOS_LO.BIN file with the dump of the LO or Odd  part of the BIOS
+#   * BIOS_HI.BIN and BIOS_LO.BIN file with the dump of the HI (Even) and LO (Odd) part of the BIOS
+#   * or BIOS.BIN file with the dump of the BIOS from a one chip ROM
 #   * OptROM.BIN with a option ROM image like a configured XTIDE ROM image
 #
 # With all these files in one directory you must only execute the script and you get a patches new BIOS file ("BIOS+OPT.BIN") and the HI and LO part for the EPROMs ("BIOS+OPT_HI.BIN" and "BIOS+OPT_LO.BIN").
@@ -14,13 +14,13 @@
 #   * calculating the jumpdestinations insted hard coded <-- solved!
 #   * searching for free space in original BIOS ROM <-- solved!
 #   * placing the option ROM automaticly into free space in the BIOS ROM  <-- solved!
-#   * error handling if files ar missing <-- partly solved
+#   * handle HI and LO or one-chip-BIOS <-- solved!
+#   * error handling if files are missing <-- partly solved
 
 #   * placing the subfunction automaticly into free space in the BIOS ROM
 #      - option one: find a call that called only one time an place the subfunction there <- current state
 #      - option tow: simulating an option ROM to an other option ROM location and put the subfunction there. The BIOS will search the option ROM and call it. pro: we must noch find the option-ROM-search-function in the BIOS (it's hard to do in a script). contra: we lost aviable memory of an empty option ROM 
 #   * set the right checksum of the ROM
-#   * handle HI and LO or one-chip-BIOS
 #   * check if the Option ROM is already insert in the BIOS
 
 
@@ -50,29 +50,37 @@ print("Working directory =", workdir)
 
 
 # STEP 1 ------------------------------------------------
-print("Loding BIOS HI and LO part and option ROM...")
+# loading BIOS ROM (as HI+LO or as single chip file
 
-byte_content_BIOS_LO = readFileContent("BIOS_LO.BIN")
-byte_content_BIOS_HI = readFileContent("BIOS_HI.BIN")
-byte_content_OptROM  = readFileContent("OptROM.BIN")
+if os.path.isfile("BIOS_LO.BIN"):
+    print("Loding BIOS HI and LO and merge both parts...")
+    byte_content_BIOS_LO = readFileContent("BIOS_LO.BIN")
+    byte_content_BIOS_HI = readFileContent("BIOS_HI.BIN")
 
-  
+    byte_content_BIOS = bytearray()
+    i = 0
+    while i < len(byte_content_BIOS_LO):
+        byte_content_BIOS.append(byte_content_BIOS_LO[i])
+        byte_content_BIOS.append(byte_content_BIOS_HI[i])
+        i += 1
+    
+    twoChipBios = True   # flag for spliting BIOS in HI and LO part
+    
+    # we can save the merged original BIOS if needed
+    file4 = open('BIOS.BIN', "wb")
+    file4.write(bytes(byte_content_BIOS))
+    file4.close()
+
+else:
+    print("Loding BIOS one chip file...")
+    byte_content_BIOS = readFileContent("BIOS.BIN")
+
+    twoChipBios = False   # flag for spliting BIOS in HI and LO part
 
 # STEP 2 ------------------------------------------------
-print("Merge the BIOS HI and LO part...")
+print("Loding option ROM...")
 
-byte_content_BIOS = bytearray()
-
-i = 0
-while i < len(byte_content_BIOS_LO):
-    byte_content_BIOS.append(byte_content_BIOS_LO[i])
-    byte_content_BIOS.append(byte_content_BIOS_HI[i])
-    i += 1
-
-# we can save the merged original BIOS if needed
-#file4 = open('BIOS.BIN', "wb")
-#file4.write(bytes(byte_content_BIOS))
-#file4.close()
+byte_content_OptROM  = readFileContent("OptROM.BIN")
 
 
 # STEP 3 ------------------------------------------------
@@ -257,26 +265,25 @@ file6.close()
 
 
 # STEP 9 ------------------------------------------------
-print("Split BIOS in to HI an LO file...")
+if twoChipBios:
+    print("Split BIOS in to HI an LO file...")
 
-byte_content_BIOS_LO_new = bytearray()
-byte_content_BIOS_HI_new = bytearray()
+    byte_content_BIOS_LO_new = bytearray()
+    byte_content_BIOS_HI_new = bytearray()
 
-i = 0
-while i < len(byte_content_BIOS):
-    byte_content_BIOS_LO_new.append(byte_content_BIOS[i])
-    i += 1
-    byte_content_BIOS_HI_new.append(byte_content_BIOS[i])
-    i += 1
+    i = 0
+    while i < len(byte_content_BIOS):
+        byte_content_BIOS_LO_new.append(byte_content_BIOS[i])
+        i += 1
+        byte_content_BIOS_HI_new.append(byte_content_BIOS[i])
+        i += 1
 
-
-
-file7 = open('BIOS+OPT_LO.BIN', "wb")   # Lo oder OD Chip
-file8 = open('BIOS+OPT_HI.BIN', "wb")   # Hi oder Ev Chip
-file7.write(bytes(byte_content_BIOS_LO_new))
-file8.write(bytes(byte_content_BIOS_HI_new))
-file7.close()
-file8.close()
+    file7 = open('BIOS+OPT_LO.BIN', "wb")   # Lo oder OD Chip
+    file8 = open('BIOS+OPT_HI.BIN', "wb")   # Hi oder Ev Chip
+    file7.write(bytes(byte_content_BIOS_LO_new))
+    file8.write(bytes(byte_content_BIOS_HI_new))
+    file7.close()
+    file8.close()
 
 
 
