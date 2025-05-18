@@ -50,7 +50,7 @@ print("Working directory =", workdir)
 
 
 # STEP 1 ------------------------------------------------
-# loading BIOS ROM (as HI+LO or as single chip file
+# loading BIOS ROM (as HI+LO or as single chip file)
 
 if os.path.isfile("BIOS_LO.BIN"):
     print("Loding BIOS HI and LO and merge both parts...")
@@ -86,6 +86,7 @@ byte_content_OptROM  = readFileContent("OptROM.BIN")
 # STEP 3 ------------------------------------------------
 print("Search for free space in the BIOS ROM...")
 
+# search for empty space marked as 0x00
 blocksize = 32
 i = 0
 countFreeROM = 0
@@ -94,28 +95,83 @@ optROMsize = len(byte_content_OptROM)
 offsetOptROM  = 0xFFFFF   # init variable to find out that we have found a place for the option ROM
 
 while i < len(byte_content_BIOS):
-   if byte_content_BIOS[i]==0:
-       if startblock==0: startblock = i
-       countFreeROM += 1
-       i += 1
-   else:
+    if byte_content_BIOS[i]==0x00:
+        if startblock==0: startblock = i
+        countFreeROM += 1
+        i += 1
+    else:
        
-       if countFreeROM >= blocksize:
-           print("free space found at offset", hex(startblock), "with size", countFreeROM)
-           if countFreeROM >= optROMsize:
-              print("space for option ROM found at offset", hex(startblock))
-              offsetOptROM = startblock
-       countFreeROM = 0
-       startblock = 0
-       i >>= 5     #unset the lower 4 bits
-       i <<= 5
-       i += blocksize
+        if countFreeROM >= blocksize:
+            print("free space (0x00) found at offset", hex(startblock), "with size", countFreeROM)
+            if countFreeROM >= optROMsize:
+                print("space for option ROM found at offset", hex(startblock))
+                offsetOptROM = startblock
+        countFreeROM = 0
+        startblock = 0
+        i >>= 5     #unset the lower 4 bits
+        i <<= 5
+        i += blocksize
+
+# if nothing found search again for empty space marked as 0xFF
+if offsetOptROM == 0xFFFFF:
+    i = 0
+    countFreeROM = 0
+    startblock = 0
+
+    while i < len(byte_content_BIOS):
+        if byte_content_BIOS[i]==0xFF:
+            if startblock==0: startblock = i
+            countFreeROM += 1
+            i += 1
+        else:
+       
+            if countFreeROM >= blocksize:
+                print("free space (0xFF) found at offset", hex(startblock), "with size", countFreeROM)
+                if countFreeROM >= optROMsize:
+                    print("space for option ROM found at offset", hex(startblock))
+                    offsetOptROM = startblock
+            countFreeROM = 0
+            startblock = 0
+            i >>= 5     #unset the lower 4 bits
+            i <<= 5
+            i += blocksize
 
 if offsetOptROM == 0xFFFFF:
     print("ERROR: not enough empty space found in BIOS ROM to insert the option ROM")
     input("Abort!")
     sys.exit()
 
+
+# STEP 4 ------------------------------------------------
+print("Search for the SearchForOptionRom call in the BIOS...")
+searchpattern1 = bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8')            #search pattern for Award   BIOS Bondewell
+searchpattern2 = bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8')    #search pattern for Pegasus BIOS Olivetti
+searchpattern3 = bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8')    #search pattern for Phoenix BIOS Sharp PC4521
+
+i = 0
+patternpossition = 0
+patternNotFound = True
+patternlength = len(searchpattern1)
+
+while i < len(byte_content_BIOS) - patternlength:
+    if byte_content_BIOS[i] == searchpattern1[patternpossition]:
+        #print(hex(searchpattern1[patternpossition])," ", end='')
+        patternpossition += 1
+        if patternpossition == patternlength:
+            print("   Call found at", hex(i))
+            patternNotFound = False
+            patternpossition = 0
+    else:
+        if patternpossition != 0:
+            #print(" ")
+            patternpossition = 0
+    i += 1
+
+if patternNotFound:
+    print("No known pattern for a call fount in BIOS. Manual disassembling and search required!")
+    print("You can send the BIOS file to the developer to improve this script.")
+    input("Abort!")
+    sys.exit()
 
 # STEP 4 ------------------------------------------------
 print("calculating all the call destinations...")
@@ -206,7 +262,6 @@ print("Insert subfunction to call option ROM...")
 # now we need "offsetSubFunc"
 
 
-
 # theoretisches vorgehen:
 #   insert SubFunction
 #   suche im BIOS nach der Stelle welche die SubFuncion "SearchFromBXtoDXforOptionRomAndCall" für BX=C800 und DX=E000 aufruft
@@ -255,6 +310,7 @@ while i < len(byte_content_BIOS):
     i += 1
     
 print("Checksum =", hex(checksum & 0xFF))
+
 
 # STEP 8 ------------------------------------------------
 print("Save patched BIOS to file...")
