@@ -15,16 +15,14 @@
 #   * searching for free space in original BIOS ROM <-- solved!
 #   * placing the option ROM automaticly into free space in the BIOS ROM  <-- solved!
 #   * handle HI and LO or one-chip-BIOS <-- solved!
-#   * error handling if files are missing <-- partly solved
+#   * error handling if files are missing <-- solved!
+#   * automaticly found the BIOS sub function to SearchOptionRomAndCall and read the offset of this call <-- solved!
 
 #   * placing the subfunction automaticly into free space in the BIOS ROM
-#      - option one: find a call that called only one time an place the subfunction there <- current state
-#      - option tow: simulating an option ROM to an other option ROM location and put the subfunction there. The BIOS will search the option ROM and call it. pro: we must noch find the option-ROM-search-function in the BIOS (it's hard to do in a script). contra: we lost aviable memory of an empty option ROM 
 #   * set the right checksum of the ROM
 #   * check if the Option ROM is already insert in the BIOS
 
 
-offsetCall    = 0x8B4F   # Position des Call zu einer Subfunction, an der wir die Zieladresse austauschen um die eingefüghte Subfunction aufzurufen (8B4F). Achtung Sprungmarken im Code sind aktuell nox fix und damit schlecht änderbar!
 offsetSubFunc = 0xDC50   # Position an der der Code für die SubFunction in das BIOS ROM eingefüght werden soll
 
 
@@ -102,9 +100,9 @@ while i < len(byte_content_BIOS):
     else:
        
         if countFreeROM >= blocksize:
-            print("free space (0x00) found at offset", hex(startblock), "with size", countFreeROM)
+            print("   free space (0x00) found at offset", hex(startblock), "with size", countFreeROM)
             if countFreeROM >= optROMsize:
-                print("space for option ROM found at offset", hex(startblock))
+                print("   space for option ROM found at offset", hex(startblock))
                 offsetOptROM = startblock
         countFreeROM = 0
         startblock = 0
@@ -126,9 +124,9 @@ if offsetOptROM == 0xFFFFF:
         else:
        
             if countFreeROM >= blocksize:
-                print("free space (0xFF) found at offset", hex(startblock), "with size", countFreeROM)
+                print("   free space (0xFF) found at offset", hex(startblock), "with size", countFreeROM)
                 if countFreeROM >= optROMsize:
-                    print("space for option ROM found at offset", hex(startblock))
+                    print("   space for option ROM found at offset", hex(startblock))
                     offsetOptROM = startblock
             countFreeROM = 0
             startblock = 0
@@ -144,34 +142,54 @@ if offsetOptROM == 0xFFFFF:
 
 # STEP 4 ------------------------------------------------
 print("Search for the SearchForOptionRom call in the BIOS...")
-searchpattern1 = bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8')            #search pattern for Award   BIOS Bondewell
-searchpattern2 = bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8')    #search pattern for Pegasus BIOS Olivetti
-searchpattern3 = bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8')    #search pattern for Phoenix BIOS Sharp PC4521
 
-i = 0
-patternpossition = 0
-patternNotFound = True
-patternlength = len(searchpattern1)
+searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),            #search pattern 0 for Award BIOS Bondewell B310
+                 bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'),    #search pattern 1 for Pegasus BIOS Olivetti
+                 bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'),    #search pattern 2 for Phoenix BIOS Sharp PC5541
+                 bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8')]            #search pattern 3 for Vadem BIOS Sharp PC4521
 
-while i < len(byte_content_BIOS) - patternlength:
-    if byte_content_BIOS[i] == searchpattern1[patternpossition]:
-        #print(hex(searchpattern1[patternpossition])," ", end='')
-        patternpossition += 1
-        if patternpossition == patternlength:
-            print("   Call found at", hex(i))
-            patternNotFound = False
-            patternpossition = 0
-    else:
-        if patternpossition != 0:
-            #print(" ")
-            patternpossition = 0
-    i += 1
 
-if patternNotFound:
-    print("No known pattern for a call fount in BIOS. Manual disassembling and search required!")
+patternFound = 0
+patternNumber = 0
+offsetCall = 0
+
+while patternNumber < len(searchpattern):
+    i = 0
+    patternpossition = 0
+    patternlength = len(searchpattern[patternNumber])
+    print("   search with pattern", patternNumber)
+
+    while i < len(byte_content_BIOS) - patternlength:
+        if byte_content_BIOS[i] == searchpattern[patternNumber][patternpossition]:
+            #print(hex(searchpattern[patternNumber][patternpossition])," ", end='')
+            patternpossition += 1
+            if patternpossition == patternlength:
+                print("   Call found with pattern", patternNumber,"at", hex(i))
+                offsetCall = i
+                patternFound += 1
+                patternpossition = 0
+        else:
+            if patternpossition != 0:
+                #print(" ")
+                patternpossition = 0
+        i += 1
+    
+    patternNumber += 1
+
+if patternFound == 0:
+    print("No known pattern found for a call in BIOS. Manual disassembling and search required!")
     print("You can send the BIOS file to the developer to improve this script.")
     input("Abort!")
     sys.exit()
+    
+if patternFound > 1:
+    print("Too many hits for a call in BIOS. Manual disassembling and search required!")
+    print("You can send the BIOS file to the developer to improve this script.")
+    input("Abort!")
+    sys.exit()
+
+
+
 
 # STEP 4 ------------------------------------------------
 print("calculating all the call destinations...")
