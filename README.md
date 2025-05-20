@@ -1,8 +1,10 @@
 # insert-OptROM-into-BIOS
-This Python code insert a Option ROM into a empty space into the BIOS ROM
+This Python code insert a Option ROM into a empty space into the BIOS ROM.
 
-The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs, you must change one offset values in the script.
-The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". I't supports Award, Phoenix, Pegasus and Vadem BIOS types. 
+Currently under construction!
+
+The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs, you must change the offset value in the script to place a new subfunction in a smal empty space.
+The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". I't supports Award, AMI, Phoenix, Pegasus and Vadem BIOS types. 
 
 To run you need the following files:
   * the script him self in the directory
