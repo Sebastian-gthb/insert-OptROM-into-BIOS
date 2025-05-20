@@ -81,6 +81,56 @@ print("Loding option ROM...")
 byte_content_OptROM  = readFileContent("OptROM.BIN")
 
 
+# STEP n ------------------------------------------------
+print("Search for the SearchForOptionRom call in the BIOS...")
+
+searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),            #search pattern 0 for Award BIOS Bondewell B310
+                 bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'),    #search pattern 1 for Pegasus BIOS Olivetti
+                 bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'),    #search pattern 2 for Phoenix BIOS Sharp PC5541
+                 bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8'),            #search pattern 3 for Vadem BIOS Sharp PC4521
+                 bytearray(b'\xE6\x80\xBB\x00\xC8\xE8')]                #search pattern 4 for AMI BIOS some 386 BIOS ROMs
+
+patternFound = 0
+patternNumber = 0
+offsetCall = 0
+
+while patternNumber < len(searchpattern):
+    i = 0
+    patternpossition = 0
+    patternlength = len(searchpattern[patternNumber])
+    print("   search with pattern", patternNumber)
+
+    while i < len(byte_content_BIOS) - patternlength:
+        if byte_content_BIOS[i] == searchpattern[patternNumber][patternpossition]:
+            #print(hex(searchpattern[patternNumber][patternpossition])," ", end='')
+            patternpossition += 1
+            if patternpossition == patternlength:
+                print("   Call found with pattern", patternNumber,"at", hex(i))
+                offsetCall = i
+                patternFound += 1
+                patternpossition = 0
+        else:
+            if patternpossition != 0:
+                #print(" ")
+                patternpossition = 0
+        i += 1
+    
+    patternNumber += 1
+
+if patternFound == 0:
+    print("No known pattern found for a call in BIOS. Manual disassembling and search required!")
+    print("You can send the BIOS file to the developer to improve this script.")
+    input("Abort!")
+    sys.exit()
+    
+if patternFound > 1:
+    print("Found too many hits for a call in BIOS. Manual disassembling and search required!")
+    print("You can send the BIOS file to the developer to improve this script.")
+    input("Abort!")
+    sys.exit()
+
+
+
 # STEP 3 ------------------------------------------------
 print("Search for free space in the BIOS ROM...")
 
@@ -138,57 +188,6 @@ if offsetOptROM == 0xFFFFF:
     print("ERROR: not enough empty space found in BIOS ROM to insert the option ROM")
     input("Abort!")
     sys.exit()
-
-
-# STEP 4 ------------------------------------------------
-print("Search for the SearchForOptionRom call in the BIOS...")
-
-searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),            #search pattern 0 for Award BIOS Bondewell B310
-                 bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'),    #search pattern 1 for Pegasus BIOS Olivetti
-                 bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'),    #search pattern 2 for Phoenix BIOS Sharp PC5541
-                 bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8')]            #search pattern 3 for Vadem BIOS Sharp PC4521
-
-
-patternFound = 0
-patternNumber = 0
-offsetCall = 0
-
-while patternNumber < len(searchpattern):
-    i = 0
-    patternpossition = 0
-    patternlength = len(searchpattern[patternNumber])
-    print("   search with pattern", patternNumber)
-
-    while i < len(byte_content_BIOS) - patternlength:
-        if byte_content_BIOS[i] == searchpattern[patternNumber][patternpossition]:
-            #print(hex(searchpattern[patternNumber][patternpossition])," ", end='')
-            patternpossition += 1
-            if patternpossition == patternlength:
-                print("   Call found with pattern", patternNumber,"at", hex(i))
-                offsetCall = i
-                patternFound += 1
-                patternpossition = 0
-        else:
-            if patternpossition != 0:
-                #print(" ")
-                patternpossition = 0
-        i += 1
-    
-    patternNumber += 1
-
-if patternFound == 0:
-    print("No known pattern found for a call in BIOS. Manual disassembling and search required!")
-    print("You can send the BIOS file to the developer to improve this script.")
-    input("Abort!")
-    sys.exit()
-    
-if patternFound > 1:
-    print("Too many hits for a call in BIOS. Manual disassembling and search required!")
-    print("You can send the BIOS file to the developer to improve this script.")
-    input("Abort!")
-    sys.exit()
-
-
 
 
 # STEP 4 ------------------------------------------------
