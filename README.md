@@ -3,7 +3,7 @@ This Python code insert a Option ROM into a empty space into the BIOS ROM.
 
 Currently under construction!
 
-The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs, you must change the offset value in the script to place a new subfunction in a smal empty space.
+The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs the script should automaticly search and check all conditions to place an option ROM in to the BIOS ROM.
 The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". I't supports Award, AMI, Phoenix, Pegasus and Vadem BIOS types. 
 
 To run you need the following files:
@@ -12,13 +12,11 @@ To run you need the following files:
   * or BIOS.BIN file with the dump of the BIOS from a one chip ROM
   * OptROM.BIN with a option ROM image like a configured XTIDE ROM image
 
-
 With all these files in one directory you must only execute the script and you get a patches new BIOS file ("BIOS+OPT.BIN") and if you start with a splited HI+LO ROM you get the HI and LO part for the EPROMs ("BIOS+OPT_HI.BIN" and "BIOS+OPT_LO.BIN").
 
-The idea, the solution and the code is from Sebastian-gthb
+The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
-   * placing the subfunction automaticly into free space in the BIOS ROM
    * set the right checksum of the ROM
    * check if the Option ROM is already insert in the BIOS
 
@@ -29,3 +27,4 @@ Changes:
    * handle HI and LO or one-chip-BIOS <-- solved!
    * error handling if files ar missing <-- solved!
    * automaticly found the BIOS call to the sub function "SearchOptionRomAndCall" <-- solved!
+   * placing the subfunction automaticly into free space in the BIOS ROM <-- solved!
