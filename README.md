@@ -1,10 +1,10 @@
 # insert-OptROM-into-BIOS
 This Python code insert a Option ROM into a empty space into the BIOS ROM.
 
-Currently under construction!
+Status = finished and need to be tested with different types of BIOS
 
 The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs the script should automaticly search and check all conditions to place an option ROM in to the BIOS ROM.
-The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". So we use this call to implement a new SubFunction that call the option ROM. This call came to the exact right time in the boot process to load option ROMs. The script supports Award, AMI, Phoenix, Pegasus and Vadem BIOS types. If you have found an unsupportet BIOS feel free to contact me and i try to implement this.
+The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". So we use this call to implement a new SubFunction that call the option ROM. This call came to the exact right time in the boot process to load option ROMs. The script supports Award, AMI, Phoenix, Pegasus and Vadem BIOS types. If you have found an unsupportet BIOS (error message = No known pattern found for a call in BIOS. Manual disassembling and search required!) feel free to contact me and i try to implement this.
 
 To run you need the following files:
   * the script him self in the directory
@@ -13,6 +13,8 @@ To run you need the following files:
   * OptROM.BIN with a option ROM image like a configured XTIDE ROM image
 
 With all these files in one directory you must only execute the script and you get a patches new BIOS file ("BIOS+OPT.BIN") and if you start with a splited HI+LO ROM you get the HI and LO part for the EPROMs ("BIOS+OPT_HI.BIN" and "BIOS+OPT_LO.BIN").
+
+WARNING: Use this script at your own risk. It is currently not well tested. Have a working backup of your original BIOS ROMs or keep the original ROMs and test the result with spare ROMs.
 
 The idea, the solution and the code is from Sebastian-gthb.
 
