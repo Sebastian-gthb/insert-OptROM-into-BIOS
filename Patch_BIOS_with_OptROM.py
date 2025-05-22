@@ -319,11 +319,18 @@ byte_content_SubFunc[6] = FarCallSegmentAdress & 0xFF
 print("      high byte =", hex(FarCallSegmentAdress & 0xFF))
 
 # calculating the offset and distance of the original SubFunction and implementing it in the new SubFunction
-offsetOrgSubFunc = byte_content_BIOS[offsetCall+1]            #low byte                  Achtung! Wass, wenn hier ein negativer Wert drin steht?!!!!!!!!!!!
+offsetOrgSubFunc = byte_content_BIOS[offsetCall+1]            #low byte
 offsetOrgSubFunc += byte_content_BIOS[offsetCall+2] << 8      #high byte
+
+if offsetOrgSubFunc & 0x8000 > 0:                 # if the call destination negative...
+    offsetOrgSubFunc &= 0x7FFF                    # take only the 15bit with the distance
+    offsetOrgSubFunc = -offsetOrgSubFunc          # set the value to negative
+
+print("   readed distance from BIOS call to original SubFunc is", offsetOrgSubFunc, "  The offset of the original SubFunction is", hex(offsetOrgSubFunc + offsetCall + 3))
+
 offsetOrgSubFunc += offsetCall + 3
 callDistanceToOrgSubFunc = offsetOrgSubFunc - (offsetSubFunc + 12)
-print("   calculated distance for the call in the new SubFunc from", hex(offsetSubFunc+12), "to original SubFunc", hex(offsetOrgSubFunc),"=", callDistanceToOrgSubFunc, hex(callDistanceToOrgSubFunc))
+print("   calculated distance for the call in the new SubFunc from", hex(offsetSubFunc+12), "to original SubFunc", hex(offsetOrgSubFunc),"=", callDistanceToOrgSubFunc, hex(callDistanceToOrgSubFunc &0xFFFF))
 byte_content_SubFunc[10] = callDistanceToOrgSubFunc & 0xFF
 print("      low  byte =", hex(callDistanceToOrgSubFunc & 0xFF))
 callDistanceToOrgSubFunc >>= 8
@@ -332,7 +339,7 @@ print("      high byte =", hex(callDistanceToOrgSubFunc & 0xFF))
 
 # calculating the distance to the new SubFunction and implementing it in the BIOS code
 callDistanceToNewSubFunc = offsetSubFunc - (offsetCall + 3)
-print("   calculated distance for the call from", hex(offsetCall), "to SubFunc", hex(offsetSubFunc),"=", callDistanceToNewSubFunc, hex(callDistanceToNewSubFunc))
+print("   calculated distance for the call from", hex(offsetCall), "to SubFunc", hex(offsetSubFunc),"=", callDistanceToNewSubFunc, hex(callDistanceToNewSubFunc &0xFFFF))
 byte_content_BIOS[offsetCall+1] = callDistanceToNewSubFunc & 0xFF
 print("      low  byte =", hex(callDistanceToNewSubFunc & 0xFF))
 callDistanceToNewSubFunc >>= 8
@@ -375,7 +382,7 @@ if warnung != 0: print(" ")
 
 
 # STEP 9 ------------------------------------------------
-print("Callculating check sum...")
+print("Callculating checksum...")
 
 i = 0
 checksum = 0
@@ -383,10 +390,23 @@ checksum = 0
 while i < len(byte_content_BIOS):
     checksum += byte_content_BIOS[i]
     i += 1
-    
-print("Checksum =", hex(checksum & 0xFF))
 
-# Anpassung der Checksumme bei offsetSubFunc + 13
+checksumaddon = 256 - (checksum & 0xFF)
+
+print("   Current checksum is", hex(checksum & 0xFF), "and now adding", hex(checksumaddon), "to be 0x00")
+
+byte_content_BIOS[offsetSubFunc + 13] = checksumaddon & 0xFF
+
+# check new checksum
+i = 0
+checksum = 0
+
+while i < len(byte_content_BIOS):
+    checksum += byte_content_BIOS[i]
+    i += 1
+
+print("   New corrected checksum is now", hex(checksum & 0xFF))
+
 
 
 # STEP 10 ------------------------------------------------
