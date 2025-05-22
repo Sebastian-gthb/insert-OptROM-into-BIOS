@@ -19,6 +19,7 @@ WARNING: Use this script at your own risk. It is currently not well tested. Have
 The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
+   * third serach for empty space market as 0xCF for Vedem BIOS types
    * check if the Option ROM is already insert in the BIOS
 
 Changes:
