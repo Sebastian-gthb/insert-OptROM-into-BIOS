@@ -19,7 +19,6 @@ WARNING: Use this script at your own risk. It is currently not well tested. Have
 The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
-   * third serach for empty space market as 0xCF for Vedem BIOS types
    * check if the Option ROM is already insert in the BIOS
 
 Changes:
@@ -31,6 +30,7 @@ Changes:
    * automaticly found the BIOS call to the sub function "SearchOptionRomAndCall" <-- solved!
    * placing the subfunction automaticly into free space in the BIOS ROM <-- solved!
    * set the right checksum of the ROM <-- solved!
+   * third serach for empty space market as 0xCF for Vedem BIOS types <-- solved!
 
 
 ### Example output of the script is:
