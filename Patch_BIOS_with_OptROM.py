@@ -1,4 +1,4 @@
-# This code implementing the option ROM (like XTIDE) into a BIOS ROM. This code is for a tow BIOS ROM chip (HI and LO).
+# This code implementing the option ROM (like XTIDE) into a BIOS ROM.
 
 # To run you need the following files:
 #   * the script him self in the directory
@@ -8,7 +8,7 @@
 #
 # With all these files in one directory you must only execute the script and you get a patches new BIOS file ("BIOS+OPT.BIN") and the HI and LO part for the EPROMs ("BIOS+OPT_HI.BIN" and "BIOS+OPT_LO.BIN").
 #
-# The idea, the solution and the code is from Sebastian Berger.
+# The idea, the solution and the code is from Sebastian-gthb.
 #
 #
 # ToDo's:
@@ -19,8 +19,9 @@
 #   * error handling if files are missing <-- solved!
 #   * automaticly found the BIOS sub function to SearchOptionRomAndCall and read the offset of this call <-- solved!
 #   * placing the subfunction automaticly into free space in the BIOS ROM <-- solved!
+#   * set the right checksum of the ROM <-- solved!
+#   * third serach for empty space market as 0xCF for Vedem BIOS types <-- solved!
 
-#   * set the right checksum of the ROM
 #   * check if the Option ROM is already insert in the BIOS
 
 
@@ -99,6 +100,30 @@ def searchForFreeSpace(byte_content_BIOS, freeSpaceSize):      # function to sea
        
             if countFreeROM >= blocksize:
                 print("   free space (0xFF) found at offset", hex(startblock), "with size", countFreeROM)
+                if countFreeROM >= freeSpaceSize:
+                    #print("   space size found at offset", hex(startblock))
+                    freeSpaceList.append(startblock)
+            countFreeROM = 0
+            startblock = 0
+            i >>= 5     #unset the lower 4 bits
+            i <<= 5
+            i += blocksize
+
+
+    # search again for empty space marked as 0xCF (Vadem BIOS types)
+    i = 0
+    countFreeROM = 0
+    startblock = 0
+
+    while i < len(byte_content_BIOS):
+        if byte_content_BIOS[i]==0xCF:
+            if startblock==0: startblock = i
+            countFreeROM += 1
+            i += 1
+        else:
+       
+            if countFreeROM >= blocksize:
+                print("   free space (0xCF) found at offset", hex(startblock), "with size", countFreeROM)
                 if countFreeROM >= freeSpaceSize:
                     #print("   space size found at offset", hex(startblock))
                     freeSpaceList.append(startblock)
