@@ -180,11 +180,12 @@ byte_content_OptROM  = readFileContent("OptROM.BIN")
 # STEP 3 ------------------------------------------------
 print("Search for the SearchForOptionRom call in the BIOS...")
 
-searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),            #search pattern 0 for Award BIOS (Bondewell B310)
-                 bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'),    #search pattern 1 for Pegasus BIOS (Olivetti)
-                 bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'),    #search pattern 2 for Phoenix BIOS (Sharp PC5541)
-                 bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8'),            #search pattern 3 for Vadem BIOS (Sharp PC4521)
-                 bytearray(b'\xE6\x80\xBB\x00\xC8\xE8')]                #search pattern 4 for AMI BIOS some (386 BIOS ROMs)
+searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),         "Award",      #search pattern 0 for Award BIOS (Bondewell B310)
+                 bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'), "Pegasus",    #search pattern 1 for Pegasus BIOS (Olivetti)
+                 bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'), "Phoenix",    #search pattern 2 for Phoenix BIOS (Sharp PC5541)
+                 bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8'),         "Vadem",      #search pattern 3 for Vadem BIOS (Sharp PC4521)
+                 bytearray(b'\xE6\x80\xBB\x00\xC8\xE8'),             "AMI",        #search pattern 4 for AMI BIOS some (386 BIOS ROMs)
+                 bytearray(b'\xBB\x00\xC8\xB9\x00\x00\xC1\xE9\x04\x81\xC1\x00\x28\xBF\x55\xAA\xE8'), "Chips and Technologie" ]    #search pattern 5 for Chips and Technologies
 
 patternFound = 0
 patternNumber = 0
@@ -194,14 +195,14 @@ while patternNumber < len(searchpattern):
     i = 0
     patternpossition = 0
     patternlength = len(searchpattern[patternNumber])
-    print("   search with pattern", patternNumber)
+    print("   search with pattern for", searchpattern[patternNumber+1], "BIOS")
 
     while i < len(byte_content_BIOS) - patternlength:
         if byte_content_BIOS[i] == searchpattern[patternNumber][patternpossition]:
             #print(hex(searchpattern[patternNumber][patternpossition])," ", end='')
             patternpossition += 1
             if patternpossition == patternlength:
-                print("   Call found with pattern", patternNumber,"at", hex(i))
+                print("   Call found with pattern for", searchpattern[patternNumber+1], "BIOS at", hex(i))
                 offsetCall = i
                 patternFound += 1
                 patternpossition = 0
@@ -211,7 +212,7 @@ while patternNumber < len(searchpattern):
                 patternpossition = 0
         i += 1
     
-    patternNumber += 1
+    patternNumber += 2
 
 if patternFound == 0:
     print("No known pattern found for a call in BIOS. Manual disassembling and search required!")
