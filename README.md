@@ -4,7 +4,7 @@ This Python code insert a Option ROM into a empty space into the BIOS ROM.
 Status = finished and need to be tested with different types of BIOS
 
 The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs the script should automaticly search and check all conditions to place an option ROM in to the BIOS ROM.
-The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". So we use this call to implement a new SubFunction that call the option ROM. This call came to the exact right time in the boot process to load option ROMs. The script supports Award, AMI, Phoenix, Pegasus and Vadem BIOS types. If you have found an unsupportet BIOS (error message = No known pattern found for a call in BIOS. Manual disassembling and search required!) feel free to contact me and i try to implement this.
+The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". So we use this call to implement a new SubFunction that call the option ROM. This call came to the exact right time in the boot process to load option ROMs. The script supports Award, AMI, Phoenix, Pegasus, Vadem and "Chips and Technologies" BIOS types. If you have found an unsupportet BIOS (error message = No known pattern found for a call in BIOS. Manual disassembling and search required!) feel free to contact me and i try to implement this.
 
 To run you need the following files:
   * the script him self in the directory
@@ -39,12 +39,13 @@ Working directory = C:\Users\user\Documents\B310
 Loding BIOS as HI and LO chip and merge both parts...
 Loding option ROM...
 Search for the SearchForOptionRom call in the BIOS...
-   search with pattern 0
-   Call found with pattern 0 at 0x8b4f
-   search with pattern 1
-   search with pattern 2
-   search with pattern 3
-   search with pattern 4
+   search with pattern for Award BIOS
+   Call found with pattern for Award BIOS at 0x8b4f
+   search with pattern for Pegasus BIOS
+   search with pattern for Phoenix BIOS
+   search with pattern for Vadem BIOS
+   search with pattern for AMI BIOS
+   search with pattern for Chips and Technologie BIOS
 Search for free space in the BIOS ROM to place the option ROM...
    free space (0x00) found at offset 0xde0 with size 25120
    free space (0x00) found at offset 0x7020 with size 224
