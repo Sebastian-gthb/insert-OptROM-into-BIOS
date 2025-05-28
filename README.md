@@ -39,15 +39,20 @@ Changes:
 ```
 Working directory = C:\Users\user\Documents\B310
 Loding BIOS as HI and LO chip and merge both parts...
+   BIOS ROM size = 65536 byte
+   Checksum of the original BIOS ROM is 0x1e
 Loding option ROM...
 Search for the SearchForOptionRom call in the BIOS...
    search with pattern for Award BIOS
    Call found with pattern for Award BIOS at 0x8b4f
    search with pattern for Pegasus BIOS
-   search with pattern for Phoenix BIOS
+   search with pattern for Phoenix 1987 BIOS
+   search with pattern for Phoenix 1988 BIOS
    search with pattern for Vadem BIOS
    search with pattern for AMI BIOS
    search with pattern for Chips and Technologie BIOS
+   search with pattern for Quadtel BIOS
+   search with pattern for Zenith BIOS
 Search for free space in the BIOS ROM to place the option ROM...
    free space (0x00) found at offset 0xde0 with size 25120
    free space (0x00) found at offset 0x7020 with size 224
@@ -79,7 +84,6 @@ Search for free space in the BIOS ROM to place the new subfunction...
    Check it's in range of a near call...
       Distance = 5551 and may not be greater than 32767
 calculating all the call destinations...
-   BIOS ROM size = 65536 byte
    Segment adress for OptROM = 0xf0de
       low  byte = 0xde
       high byte = 0xf0
