@@ -171,6 +171,18 @@ else:
 
     twoChipBios = False   # flag for spliting BIOS in HI and LO part
 
+# print some information of the original BIOS ROM
+print("   BIOS ROM size =", len(byte_content_BIOS), "byte")
+# calculating checksum of the original BIOS ROM
+i = 0
+checksum = 0
+while i < len(byte_content_BIOS):
+    checksum += byte_content_BIOS[i]
+    i += 1
+checksumOrg = checksum & 0xFF
+print("   Checksum of the original BIOS ROM is", hex(checksumOrg))
+
+
 # STEP 2 ------------------------------------------------
 print("Loding option ROM...")
 
@@ -180,12 +192,15 @@ byte_content_OptROM  = readFileContent("OptROM.BIN")
 # STEP 3 ------------------------------------------------
 print("Search for the SearchForOptionRom call in the BIOS...")
 
-searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),         "Award",      #search pattern 0 for Award BIOS (Bondewell B310)
-                 bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'), "Pegasus",    #search pattern 1 for Pegasus BIOS (Olivetti)
-                 bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'), "Phoenix",    #search pattern 2 for Phoenix BIOS (Sharp PC5541)
-                 bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8'),         "Vadem",      #search pattern 3 for Vadem BIOS (Sharp PC4521)
-                 bytearray(b'\xE6\x80\xBB\x00\xC8\xE8'),             "AMI",        #search pattern 4 for AMI BIOS some (386 BIOS ROMs)
-                 bytearray(b'\xBB\x00\xC8\xB9\x00\x00\xC1\xE9\x04\x81\xC1\x00\x28\xBF\x55\xAA\xE8'), "Chips and Technologie" ]    #search pattern 5 for Chips and Technologies
+searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),         "Award",           #search pattern for Award BIOS (Bondewell B310)
+                 bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'), "Pegasus",         #search pattern for Pegasus BIOS (Olivetti)
+                 bytearray(b'\xBE\x00\xC8\xB9\x00\xE0\xB2\x00\xE8'), "Phoenix 1987",    #search pattern for Phoenix BIOS
+                 bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'), "Phoenix 1988",    #search pattern for Phoenix BIOS (Sharp PC5541)
+                 bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8'),         "Vadem",           #search pattern for Vadem BIOS (Sharp PC4521)
+                 bytearray(b'\xE6\x80\xBB\x00\xC8\xE8'),             "AMI",             #search pattern for AMI BIOS some (386 BIOS ROMs)
+                 bytearray(b'\xBB\x00\xC8\xB9\x00\x00\xC1\xE9\x04\x81\xC1\x00\x28\xBF\x55\xAA\xE8'), "Chips and Technologie",    #search pattern for Chips and Technologies
+                 bytearray(b'\xBB\x00\xC8\xB9\x00\x30\xA0\x8F\x00\x50\xE8'), "Quadtel",         #search pattern for Quadtel BIOS
+                 bytearray(b'\xE6\x80\xBB\x00\xC8\xB9\x30\x00\xB4\x00\xE8'), "Zenith" ]         #search pattern for Zenith BIOS
 
 patternFound = 0
 patternNumber = 0
@@ -334,7 +349,6 @@ print("calculating all the call destinations...")
 
 
 # calculating the segment adress of the Option ROM and implementing it in the new SubFunction
-print("   BIOS ROM size =", len(byte_content_BIOS), "byte")
 FarCallSegmentAdress = 0x100000 - len(byte_content_BIOS) + offsetOptROM
 FarCallSegmentAdress >>= 4
 print("   Segment adress for OptROM =", hex(FarCallSegmentAdress))
