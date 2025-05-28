@@ -1,10 +1,10 @@
 # insert-OptROM-into-BIOS
-This Python code insert a Option ROM into a empty space into the BIOS ROM.
+This Python code insert a Option ROM into a empty space into a BIOS ROM (for the era of 286 and 386 CPUs).
 
 Status = finished and need to be tested with different types of BIOS
 
 The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs the script should automaticly search and check all conditions to place an option ROM in to the BIOS ROM.
-The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". So we use this call to implement a new SubFunction that call the option ROM. This call came to the exact right time in the boot process to load option ROMs. The script supports Award, AMI, Phoenix, Pegasus, Vadem and "Chips and Technologies" BIOS types. If you have found an unsupportet BIOS (error message = No known pattern found for a call in BIOS. Manual disassembling and search required!) feel free to contact me and i try to implement this.
+The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". So we use this call to implement a new SubFunction that call the option ROM. This call came to the exact right time in the boot process to load option ROMs. The script supports Award, AMI, Phoenix, Pegasus, Vadem, Quadtel, Zenith and "Chips and Technologies" BIOS types. If you have found an unsupportet BIOS (error message = No known pattern found for a call in BIOS. Manual disassembling and search required!) feel free to contact me and i try to implement this.
 
 To run you need the following files:
   * the script him self in the directory
@@ -19,7 +19,6 @@ WARNING: Use this script at your own risk. It is currently not well tested. Have
 The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
-   * adding more BIOS search pattern... have found some ROMs with unknown pattern
    * check if the Option ROM is already insert in the BIOS
 
 Changes:
@@ -32,6 +31,7 @@ Changes:
    * placing the subfunction automaticly into free space in the BIOS ROM <-- solved!
    * set the right checksum of the ROM <-- solved!
    * third serach for empty space market as 0xCF for Vedem BIOS types <-- solved!
+   * adding more BIOS search pattern... have found some ROMs with unknown pattern <-- solved!
 
 
 ### Example output of the script is:
