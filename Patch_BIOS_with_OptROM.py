@@ -61,81 +61,99 @@ def searchForFreeSpace(byte_content_BIOS, freeSpaceSize):      # function to sea
     blocksize = 32            # minimum block size of free space (must be a multible of 16)
     freeSpaceList = []        # generate a empty list
     
-    # search for free space marked as 0x00
-    i = 0
-    countFreeROM = 0
-    startblock = 0
-    
+    newRow = False    # save lines of output with list in 2 coloumns
+    rowNumers = 3
+    rowCount = 1
+    searchpattern = [0x00, 0xFF, 0xCF]      #search for blocks of contiguous bytes of these values (0xCF is in Vadem BIOS types)
+    patternNumber = 0
 
+    while patternNumber < len(searchpattern):
+        i = 0
+        countFreeROM = 0
+        startblock = 0
 
-    while i < len(byte_content_BIOS):
-        if byte_content_BIOS[i]==0x00:
-            if startblock==0: startblock = i
-            countFreeROM += 1
-            i += 1
-        else:
+        while i < len(byte_content_BIOS):
+            if byte_content_BIOS[i]==searchpattern[patternNumber]:
+                if startblock==0: startblock = i
+                countFreeROM += 1
+                i += 1
+            else:
        
-            if countFreeROM >= blocksize:
-                print("   free space (0x00) found at offset", hex(startblock), "with size", countFreeROM)
-                if countFreeROM >= freeSpaceSize:
-                    #print("   space size found at offset", hex(startblock))
-                    freeSpaceList.append(startblock)
-            countFreeROM = 0
-            startblock = 0
-            i >>= 5     #unset the lower 4 bits
-            i <<= 5
-            i += blocksize
-
-    # search again for empty space marked as 0xFF
-    i = 0
-    countFreeROM = 0
-    startblock = 0
-
-    while i < len(byte_content_BIOS):
-        if byte_content_BIOS[i]==0xFF:
-            if startblock==0: startblock = i
-            countFreeROM += 1
-            i += 1
-        else:
-       
-            if countFreeROM >= blocksize:
-                print("   free space (0xFF) found at offset", hex(startblock), "with size", countFreeROM)
-                if countFreeROM >= freeSpaceSize:
-                    #print("   space size found at offset", hex(startblock))
-                    freeSpaceList.append(startblock)
-            countFreeROM = 0
-            startblock = 0
-            i >>= 5     #unset the lower 4 bits
-            i <<= 5
-            i += blocksize
+                if countFreeROM >= blocksize:
+                    print("   ", format(countFreeROM, '>6'), "byte of", format(searchpattern[patternNumber], '#04X'), "at", format(startblock, '#7x'), end='')
+                    if rowCount == rowNumers:
+                        print("\n", end='')
+                        newRow = False
+                        rowCount = 1
+                    else:
+                        print("\t", end='')
+                        newRow = True
+                        rowCount += 1
+                    if countFreeROM >= freeSpaceSize:
+                        #print("   space size found at offset", hex(startblock))
+                        freeSpaceList.append(startblock)
+                countFreeROM = 0
+                startblock = 0
+                i >>= 5     #unset the lower 4 bits
+                i <<= 5
+                i += blocksize
+        patternNumber += 1
 
 
-    # search again for empty space marked as 0xCF (Vadem BIOS types)
-    i = 0
-    countFreeROM = 0
-    startblock = 0
-
-    while i < len(byte_content_BIOS):
-        if byte_content_BIOS[i]==0xCF:
-            if startblock==0: startblock = i
-            countFreeROM += 1
-            i += 1
-        else:
-       
-            if countFreeROM >= blocksize:
-                print("   free space (0xCF) found at offset", hex(startblock), "with size", countFreeROM)
-                if countFreeROM >= freeSpaceSize:
-                    #print("   space size found at offset", hex(startblock))
-                    freeSpaceList.append(startblock)
-            countFreeROM = 0
-            startblock = 0
-            i >>= 5     #unset the lower 4 bits
-            i <<= 5
-            i += blocksize
-
+    if newRow: print("\n", end='')
     freeSpaceList.sort()
     print("   Found", len(freeSpaceList), "free space blocks to place", freeSpaceSize, "bytes at", list(map(hex, freeSpaceList)))
     return freeSpaceList
+
+
+def searchForBiosCall(byte_content_BIOS):
+    searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),         "Award",           #search pattern for Award BIOS (Bondewell B310)
+                     bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'), "Pegasus",         #search pattern for Pegasus BIOS (Olivetti)
+                     bytearray(b'\xBE\x00\xC8\xB9\x00\xE0\xB2\x00\xE8'), "Phoenix 1987",    #search pattern for Phoenix BIOS
+                     bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'), "Phoenix 1988",    #search pattern for Phoenix BIOS (Sharp PC5541)
+                     bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8'),         "Vadem",           #search pattern for Vadem BIOS (Sharp PC4521)
+                     bytearray(b'\xE6\x80\xBB\x00\xC8\xE8'),             "AMI",             #search pattern for AMI BIOS some (386 BIOS ROMs)
+                     bytearray(b'\xBB\x00\xC8\xB9\x00\x00\xC1\xE9\x04\x81\xC1\x00\x28\xBF\x55\xAA\xE8'), "Chips and Technologie",    #search pattern for Chips and Technologies
+                     bytearray(b'\xBB\x00\xC8\xB9\x00\x30\xA0\x8F\x00\x50\xE8'), "Quadtel",         #search pattern for Quadtel BIOS
+                     bytearray(b'\xE6\x80\xBB\x00\xC8\xB9\x30\x00\xB4\x00\xE8'), "Zenith" ]         #search pattern for Zenith BIOS
+
+    patternFound = 0
+    patternNumber = 0
+    offsetCall = 0
+
+    while patternNumber < len(searchpattern):
+        i = 0
+        patternpossition = 0
+        patternlength = len(searchpattern[patternNumber])
+        print("   search with pattern for", searchpattern[patternNumber+1], "BIOS")
+
+        while i < len(byte_content_BIOS) - patternlength:
+            if byte_content_BIOS[i] == searchpattern[patternNumber][patternpossition]:
+                patternpossition += 1
+                if patternpossition == patternlength:
+                    print("   Call found with pattern for", searchpattern[patternNumber+1], "BIOS at", hex(i))
+                    offsetCall = i
+                    patternFound += 1
+                    patternpossition = 0
+            else:
+                patternpossition = 0
+            i += 1
+    
+        patternNumber += 2
+
+    if patternFound == 0:
+        print("   No known pattern found for a call in BIOS. Manual disassembling and search required!")
+        print("   You can send the BIOS file to the developer to improve this script.")
+        input("   Abort!")
+        sys.exit()
+    
+    if patternFound > 1:
+        print("   Found too many hits for a call in BIOS. Manual disassembling and search required!")
+        print("   You can send the BIOS file to the developer to improve this script.")
+        input("   Abort!")
+        sys.exit()
+        
+    return offsetCall
 
 
 workdir = os.path.dirname(os.path.realpath(__file__))
@@ -192,55 +210,7 @@ byte_content_OptROM  = readFileContent("OptROM.BIN")
 # STEP 3 ------------------------------------------------
 print("Search for the SearchForOptionRom call in the BIOS...")
 
-searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),         "Award",           #search pattern for Award BIOS (Bondewell B310)
-                 bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'), "Pegasus",         #search pattern for Pegasus BIOS (Olivetti)
-                 bytearray(b'\xBE\x00\xC8\xB9\x00\xE0\xB2\x00\xE8'), "Phoenix 1987",    #search pattern for Phoenix BIOS
-                 bytearray(b'\x32\xD2\xBE\x00\xC8\xB9\x00\xE0\xE8'), "Phoenix 1988",    #search pattern for Phoenix BIOS (Sharp PC5541)
-                 bytearray(b'\xBB\x00\xC8\xBF\x00\xF0\xE8'),         "Vadem",           #search pattern for Vadem BIOS (Sharp PC4521)
-                 bytearray(b'\xE6\x80\xBB\x00\xC8\xE8'),             "AMI",             #search pattern for AMI BIOS some (386 BIOS ROMs)
-                 bytearray(b'\xBB\x00\xC8\xB9\x00\x00\xC1\xE9\x04\x81\xC1\x00\x28\xBF\x55\xAA\xE8'), "Chips and Technologie",    #search pattern for Chips and Technologies
-                 bytearray(b'\xBB\x00\xC8\xB9\x00\x30\xA0\x8F\x00\x50\xE8'), "Quadtel",         #search pattern for Quadtel BIOS
-                 bytearray(b'\xE6\x80\xBB\x00\xC8\xB9\x30\x00\xB4\x00\xE8'), "Zenith" ]         #search pattern for Zenith BIOS
-
-patternFound = 0
-patternNumber = 0
-offsetCall = 0
-
-while patternNumber < len(searchpattern):
-    i = 0
-    patternpossition = 0
-    patternlength = len(searchpattern[patternNumber])
-    print("   search with pattern for", searchpattern[patternNumber+1], "BIOS")
-
-    while i < len(byte_content_BIOS) - patternlength:
-        if byte_content_BIOS[i] == searchpattern[patternNumber][patternpossition]:
-            #print(hex(searchpattern[patternNumber][patternpossition])," ", end='')
-            patternpossition += 1
-            if patternpossition == patternlength:
-                print("   Call found with pattern for", searchpattern[patternNumber+1], "BIOS at", hex(i))
-                offsetCall = i
-                patternFound += 1
-                patternpossition = 0
-        else:
-            if patternpossition != 0:
-                #print(" ")
-                patternpossition = 0
-        i += 1
-    
-    patternNumber += 2
-
-if patternFound == 0:
-    print("No known pattern found for a call in BIOS. Manual disassembling and search required!")
-    print("You can send the BIOS file to the developer to improve this script.")
-    input("Abort!")
-    sys.exit()
-    
-if patternFound > 1:
-    print("Found too many hits for a call in BIOS. Manual disassembling and search required!")
-    print("You can send the BIOS file to the developer to improve this script.")
-    input("Abort!")
-    sys.exit()
-
+offsetCall = searchForBiosCall(byte_content_BIOS)
 
 
 # STEP 4 ------------------------------------------------
@@ -249,8 +219,8 @@ print("Search for free space in the BIOS ROM to place the option ROM...")
 freeSpaceList = searchForFreeSpace(byte_content_BIOS, len(byte_content_OptROM))
 
 if len(freeSpaceList) == 0:
-    print("ERROR: not enough empty space found in BIOS ROM to insert the option ROM")
-    input("Abort!")
+    print("   ERROR: not enough empty space found in BIOS ROM to insert the option ROM")
+    input("   Abort!")
     sys.exit()
 
 offsetOptROM = freeSpaceList[0]       # use the first free space block to insert the option ROM
@@ -268,8 +238,8 @@ FirstSameByte = byte_content_BIOS[position]
 print("   inserting", len(byte_content_OptROM), "byte code in", len(byte_content_BIOS), "byte of BIOS ROM, at position", hex(offsetOptROM))
 
 if offsetOptROM + len(byte_content_OptROM) > len(byte_content_BIOS):
-    print("ERROR: offset + option ROM length to long for BIOS")
-    input("Abort!")
+    print("   ERROR: offset + option ROM length to long for BIOS")
+    input("   Abort!")
     sys.exit()
 
 
@@ -297,8 +267,8 @@ print("Search for free space in the BIOS ROM to place the new subfunction...")
 freeSpaceList = searchForFreeSpace(byte_content_BIOS, len(byte_content_SubFunc))
 
 if len(freeSpaceList) == 0:
-    print("ERROR: not enough empty space found in BIOS ROM to insert the new subfunction")
-    input("Abort!")
+    print("   ERROR: not enough empty space found in BIOS ROM to insert the new subfunction")
+    input("   Abort!")
     sys.exit()
 
 if len(freeSpaceList) == 1:
@@ -339,8 +309,8 @@ if distanceToCall < 0: distanceToCall = -distanceToCall      # change a negative
 print("      Distance =", distanceToCall, "and may not be greater than", 0x7FFF)
 
 if distanceToCall > 0x7FFF:
-    print("ERROR: no free space found in a range of a near call.")
-    input("Abort!")
+    print("   ERROR: no free space found in a range of a near call.")
+    input("   Abort!")
     sys.exit()
 
 
@@ -400,8 +370,9 @@ FirstSameByte = byte_content_BIOS[position]
 print("   inserting", len(byte_content_SubFunc), "byte code in", len(byte_content_BIOS), "byte of BIOS code, at position", hex(offsetSubFunc))
 
 if offsetSubFunc + len(byte_content_SubFunc) > len(byte_content_BIOS):
-    print("ERROR: offset + SubFunc length to long for BIOS")
-    input("Abort!")
+    print("   ERROR: offset + SubFunc length to long for BIOS")
+    input("   Abort!")
+    input("   Abort!")
     sys.exit()
 
 while i < len(byte_content_SubFunc):
