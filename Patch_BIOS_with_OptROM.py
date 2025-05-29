@@ -2,27 +2,13 @@
 
 # To run you need the following files:
 #   * the script him self in the directory
-#   * BIOS_HI.BIN and BIOS_LO.BIN file with the dump of the HI (Even) and LO (Odd) part of the BIOS
+#   * BIOS_HI.BIN and BIOS_LO.BIN file with the dump of the HI (Odd) and LO (Even) part of the BIOS
 #   * or BIOS.BIN file with the dump of the BIOS from a one chip ROM
 #   * OptROM.BIN with a option ROM image like a configured XTIDE ROM image
 #
 # With all these files in one directory you must only execute the script and you get a patches new BIOS file ("BIOS+OPT.BIN") and the HI and LO part for the EPROMs ("BIOS+OPT_HI.BIN" and "BIOS+OPT_LO.BIN").
 #
 # The idea, the solution and the code is from Sebastian-gthb.
-#
-#
-# ToDo's:
-#   * calculating the jumpdestinations insted hard coded <-- solved!
-#   * searching for free space in original BIOS ROM <-- solved!
-#   * placing the option ROM automaticly into free space in the BIOS ROM  <-- solved!
-#   * handle HI and LO or one-chip-BIOS <-- solved!
-#   * error handling if files are missing <-- solved!
-#   * automaticly found the BIOS sub function to SearchOptionRomAndCall and read the offset of this call <-- solved!
-#   * placing the subfunction automaticly into free space in the BIOS ROM <-- solved!
-#   * set the right checksum of the ROM <-- solved!
-#   * third serach for empty space market as 0xCF for Vedem BIOS types <-- solved!
-
-#   * check if the Option ROM is already insert in the BIOS
 
 
 
@@ -55,6 +41,15 @@ def readFileContent(filename):                              # function to read a
         input("Abort!")
         sys.exit()
     return byte_content
+
+
+def calcChecksum(byte_content_BIOS):
+    i = 0
+    checksum = 0
+    while i < len(byte_content_BIOS):
+        checksum += byte_content_BIOS[i]
+        i += 1
+    return checksum & 0xFF
 
 
 def searchForFreeSpace(byte_content_BIOS, freeSpaceSize):      # function to search for free space and return a list of offsets
@@ -156,6 +151,34 @@ def searchForBiosCall(byte_content_BIOS):
     return offsetCall
 
 
+def insertArrayIntoArray(byte_content_BIOS, byte_content_injection, position):
+    i = 0
+    warning = False
+    FirstSameByte = byte_content_BIOS[position]
+    print("   inserting", len(byte_content_injection), "byte code in", len(byte_content_BIOS), "byte of BIOS ROM, at position", hex(position))
+
+    if position + len(byte_content_injection) > len(byte_content_BIOS):
+        print("   ERROR: offset + option ROM length to long for BIOS")
+        input("   Abort!")
+        sys.exit()
+
+    while i < len(byte_content_injection):
+
+        if byte_content_BIOS[position] != FirstSameByte:
+            if not warning:
+                print("   WARNING: found content at: ", end='')
+                warning = True
+            print(position, " ", end='')
+
+        byte_content_BIOS[position] = byte_content_injection[i]
+
+        i += 1
+        position += 1
+
+    if warning: print(" ")    # if a warning was printed make a new line at the end
+    
+    return byte_content_BIOS
+
 workdir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(workdir)
 print("Working directory =", workdir)
@@ -189,16 +212,9 @@ else:
 
     twoChipBios = False   # flag for spliting BIOS in HI and LO part
 
-# print some information of the original BIOS ROM
-print("   BIOS ROM size =", len(byte_content_BIOS), "byte")
-# calculating checksum of the original BIOS ROM
-i = 0
-checksum = 0
-while i < len(byte_content_BIOS):
-    checksum += byte_content_BIOS[i]
-    i += 1
-checksumOrg = checksum & 0xFF
-print("   Checksum of the original BIOS ROM is", hex(checksumOrg))
+# calculating checksum and print some information of the original BIOS ROM
+checksumOrg = calcChecksum(byte_content_BIOS)
+print("   BIOS ROM size =", len(byte_content_BIOS), "byte. \t checksum =", hex(checksumOrg))
 
 
 # STEP 2 ------------------------------------------------
@@ -231,33 +247,16 @@ offsetOptROM = freeSpaceList[0]       # use the first free space block to insert
 print("Insert option ROM into BIOS...")
 
 # now we need "offsetOptROM"
-i = 0
-warnung = 0
-position = offsetOptROM
-FirstSameByte = byte_content_BIOS[position]
-print("   inserting", len(byte_content_OptROM), "byte code in", len(byte_content_BIOS), "byte of BIOS ROM, at position", hex(offsetOptROM))
 
-if offsetOptROM + len(byte_content_OptROM) > len(byte_content_BIOS):
-    print("   ERROR: offset + option ROM length to long for BIOS")
-    input("   Abort!")
-    sys.exit()
+# parameter:
+#     * target binary array = byte_content_BIOS
+#     * source binary array = byte_content_OptROM
+#     * position to insert  = offsetOptROM
+#
+# return:
+#     * byte_content_BIOS
 
-
-while i < len(byte_content_OptROM):
-
-    if byte_content_BIOS[position] != FirstSameByte:
-        if warnung == 0:
-            print("WARNING: found content at: ", end='')
-            warnung = 1
-        print(position, " ", end='')
-
-
-    byte_content_BIOS[position] = byte_content_OptROM[i]
-
-    i += 1
-    position += 1
-
-if warnung != 0: print(" ")
+byte_content_BIOS = insertArrayIntoArray(byte_content_BIOS, byte_content_OptROM, offsetOptROM)
 
 
 
@@ -279,12 +278,9 @@ else:
 
     i = 0
     for x in freeSpaceList:
-        #print(hex(x))
         if x > offsetCall:
             break
         i += 1
-
-    #print("      ListNumber =", i)
     
     if i == 0:
         offsetSubFunc = freeSpaceList[0]        # if the 1st space position greater the offsetCall use the first space
@@ -359,63 +355,32 @@ print("      high byte =", hex(callDistanceToNewSubFunc & 0xFF))
 
 
 # STEP 8 ------------------------------------------------
-print("Insert subfunction to call option ROM...")
+print("Insert subfunction to call the option ROM...")
 
-# now we need "offsetSubFunc"
+# parameter:
+#     * target binary array = byte_content_BIOS
+#     * source binary array = byte_content_SubFunc
+#     * position to insert  = offsetSubFunc
+#
+# return:
+#     * byte_content_BIOS
 
-i = 0
-warnung = 0
-position = offsetSubFunc
-FirstSameByte = byte_content_BIOS[position]
-print("   inserting", len(byte_content_SubFunc), "byte code in", len(byte_content_BIOS), "byte of BIOS code, at position", hex(offsetSubFunc))
-
-if offsetSubFunc + len(byte_content_SubFunc) > len(byte_content_BIOS):
-    print("   ERROR: offset + SubFunc length to long for BIOS")
-    input("   Abort!")
-    input("   Abort!")
-    sys.exit()
-
-while i < len(byte_content_SubFunc):
-
-    if byte_content_BIOS[position] != FirstSameByte:
-        if warnung == 0:
-            print("WARNING: found content at: ", end='')
-            warnung = 1
-        print(position, " ", end='')
-
-
-    byte_content_BIOS[position] = byte_content_SubFunc[i]
-
-    i += 1
-    position += 1
-
-if warnung != 0: print(" ")
+byte_content_BIOS = insertArrayIntoArray(byte_content_BIOS, byte_content_SubFunc, offsetSubFunc)
 
 
 # STEP 9 ------------------------------------------------
-print("Callculating checksum...")
+print("Callculating checksum and correcting to the original checksum...")
 
-i = 0
-checksum = 0
 
-while i < len(byte_content_BIOS):
-    checksum += byte_content_BIOS[i]
-    i += 1
+checksum = calcChecksum(byte_content_BIOS)
+checksumaddon = checksumOrg - (checksum & 0xFF)
+print("   Current checksum is", hex(checksum & 0xFF), "and now adding", hex(checksumaddon & 0xFF), "to be", hex(checksumOrg))
 
-checksumaddon = 256 - (checksum & 0xFF)
-
-print("   Current checksum is", hex(checksum & 0xFF), "and now adding", hex(checksumaddon), "to be 0x00")
-
+# patching the checksum
 byte_content_BIOS[offsetSubFunc + 13] = checksumaddon & 0xFF
 
 # check new checksum
-i = 0
-checksum = 0
-
-while i < len(byte_content_BIOS):
-    checksum += byte_content_BIOS[i]
-    i += 1
-
+checksum = calcChecksum(byte_content_BIOS)
 print("   New corrected checksum is now", hex(checksum & 0xFF))
 
 
@@ -442,8 +407,8 @@ if twoChipBios:
         byte_content_BIOS_HI_new.append(byte_content_BIOS[i])
         i += 1
 
-    file7 = open('BIOS+OPT_LO.BIN', "wb")   # Lo oder OD Chip
-    file8 = open('BIOS+OPT_HI.BIN', "wb")   # Hi oder Ev Chip
+    file7 = open('BIOS+OPT_LO.BIN', "wb")   # Low  or Even Chip
+    file8 = open('BIOS+OPT_HI.BIN', "wb")   # High or Odd  Chip
     file7.write(bytes(byte_content_BIOS_LO_new))
     file8.write(bytes(byte_content_BIOS_HI_new))
     file7.close()
