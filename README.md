@@ -14,12 +14,16 @@ To run you need the following files:
 
 With all these files in one directory you must only execute the script and you get a patches new BIOS file ("BIOS+OPT.BIN") and if you start with a splited HI+LO ROM you get the HI and LO part for the EPROMs ("BIOS+OPT_HI.BIN" and "BIOS+OPT_LO.BIN").
 
+Patch_BIOS_with_OptROM.py is the script to insert the option ROM into the BIOS ROM image.
+Analyse_many_BIOS_Files.py is a script to check all *.bin files in the same directory for the conditions to insert a option ROM. 
+
 WARNING: Use this script at your own risk. It is currently not well tested. Have a working backup of your original BIOS ROMs or keep the original ROMs and test the result with spare ROMs.
 
 The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
    * recreating the original checksum of the BIOS ROM insted of a checksum of 0
+   * creating a library to use the same functions in both scripts
    * check if the Option ROM is already insert in the BIOS
 
 Changes:
@@ -54,29 +58,17 @@ Search for the SearchForOptionRom call in the BIOS...
    search with pattern for Quadtel BIOS
    search with pattern for Zenith BIOS
 Search for free space in the BIOS ROM to place the option ROM...
-   free space (0x00) found at offset 0xde0 with size 25120
-   free space (0x00) found at offset 0x7020 with size 224
-   free space (0x00) found at offset 0x72e0 with size 32
-   free space (0x00) found at offset 0x7380 with size 128
-   free space (0x00) found at offset 0x7420 with size 227
-   free space (0x00) found at offset 0x75a0 with size 2656
-   free space (0x00) found at offset 0xdc40 with size 960
-   free space (0x00) found at offset 0xe680 with size 113
-   free space (0x00) found at offset 0xfec0 with size 35
+     25120 byte of 0X00 at   0xde0             224 byte of 0X00 at  0x7020              32 byte of 0X00 at  0x72e0
+       128 byte of 0X00 at  0x7380             227 byte of 0X00 at  0x7420            2656 byte of 0X00 at  0x75a0
+       960 byte of 0X00 at  0xdc40             113 byte of 0X00 at  0xe680              35 byte of 0X00 at  0xfec0
    Found 1 free space blocks to place 8192 bytes at ['0xde0']
 Insert option ROM into BIOS...
    inserting 8192 byte code in 65536 byte of BIOS ROM, at position 0xde0
 Search for free space in the BIOS ROM to place the new subfunction...
-   free space (0x00) found at offset 0x27c0 with size 1565
-   free space (0x00) found at offset 0x2de0 with size 16928
-   free space (0x00) found at offset 0x7020 with size 224
-   free space (0x00) found at offset 0x72e0 with size 32
-   free space (0x00) found at offset 0x7380 with size 128
-   free space (0x00) found at offset 0x7420 with size 227
-   free space (0x00) found at offset 0x75a0 with size 2656
-   free space (0x00) found at offset 0xdc40 with size 960
-   free space (0x00) found at offset 0xe680 with size 113
-   free space (0x00) found at offset 0xfec0 with size 35
+      1565 byte of 0X00 at  0x27c0           16928 byte of 0X00 at  0x2de0             224 byte of 0X00 at  0x7020
+        32 byte of 0X00 at  0x72e0             128 byte of 0X00 at  0x7380             227 byte of 0X00 at  0x7420
+      2656 byte of 0X00 at  0x75a0             960 byte of 0X00 at  0xdc40             113 byte of 0X00 at  0xe680
+        35 byte of 0X00 at  0xfec0
    Found 10 free space blocks to place 14 bytes at ['0x27c0', '0x2de0', '0x7020', '0x72e0', '0x7380', '0x7420', '0x75a0', '0xdc40', '0xe680', '0xfec0']
    Search the closest free space...
       offsetCall = 0x8b4f
@@ -101,5 +93,4 @@ Callculating checksum...
    New corrected checksum is now 0x0
 Save patched BIOS to file...
 Split BIOS in to HI an LO file...
-finished!
-```
+finished!```
