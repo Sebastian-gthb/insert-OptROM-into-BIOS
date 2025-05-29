@@ -1,5 +1,5 @@
 # insert-OptROM-into-BIOS
-This Python code insert a Option ROM into a empty space into a BIOS ROM (for the era of 286 and 386 CPUs).
+This Python code insert a Option ROM into a empty space in a BIOS ROM (for the era of 286 and 386 CPUs).
 
 Status = finished and need to be tested with different types of BIOS
 
@@ -8,7 +8,7 @@ The Script supporting automaticly search for the BIOS call to the function "Sear
 
 To run you need the following files:
   * the script him self in the directory
-  * BIOS_HI.BIN and BIOS_LO.BIN file with the dump of the HI (Even) and LO (Odd) part of the BIOS
+  * BIOS_HI.BIN and BIOS_LO.BIN file with the dump of the HI (Odd) and LO (Even) part of the BIOS
   * or BIOS.BIN file with the dump of the BIOS from a one chip ROM
   * OptROM.BIN with a option ROM image like a configured XTIDE ROM image
 
@@ -23,7 +23,6 @@ WARNING: Use this script at your own risk. It is currently not well tested. Have
 The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
-   * recreating the original checksum of the BIOS ROM insted of a checksum of 0
    * creating a library to use the same functions in both scripts
    * check if the Option ROM is already insert in the BIOS
 
@@ -38,14 +37,14 @@ Changes:
    * set the right checksum of the ROM <-- solved!
    * third serach for empty space market as 0xCF for Vedem BIOS types <-- solved!
    * adding more BIOS search pattern... have found some ROMs with unknown pattern <-- solved!
+   * recreating the original checksum of the BIOS ROM insted of a checksum of 0 <-- solved!
 
 
 ### Example output of the script is:
 ```
 Working directory = C:\Users\user\Documents\B310
 Loding BIOS as HI and LO chip and merge both parts...
-   BIOS ROM size = 65536 byte
-   Checksum of the original BIOS ROM is 0x1e
+   BIOS ROM size = 65536 byte.   checksum = 0x1e
 Loding option ROM...
 Search for the SearchForOptionRom call in the BIOS...
    search with pattern for Award BIOS
@@ -87,11 +86,12 @@ calculating all the call destinations...
    calculated distance for the call from 0x8b4f to SubFunc 0x75a0 = -5554 0xea4e
       low  byte = 0x4e
       high byte = 0xea
-Insert subfunction to call option ROM...
-   inserting 14 byte code in 65536 byte of BIOS code, at position 0x75a0
-Callculating checksum...
-   Current checksum is 0x22 and now adding 0xde to be 0x00
-   New corrected checksum is now 0x0
+Insert subfunction to call the option ROM...
+   inserting 14 byte code in 65536 byte of BIOS ROM, at position 0x75a0
+Callculating checksum and correcting to the original checksum...
+   Current checksum is 0x22 and now adding 0xfc to be 0x1e
+   New corrected checksum is now 0x1e
 Save patched BIOS to file...
 Split BIOS in to HI an LO file...
-finished!```
+finished!
+```
