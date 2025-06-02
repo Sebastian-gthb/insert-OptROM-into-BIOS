@@ -27,9 +27,54 @@ byte_content_SubFunc = bytearray(b'\x60\x9C\x9A\x03\x00\x00\x00\x9D\x61\xE8\x00\
 #f000:dc59    E8CCB1        call near f000:8E28
 #f000:dc5C    C3            ret
 
-
 import os
 import sys
+
+#-------------classes--------------------------------------------
+
+class txtcolor:                  #class for text color
+    black   = '\033[30m'
+    red     = '\033[31m'
+    green   = '\033[32m'
+    yellow  = '\033[33m'
+    blue    = '\033[34m'
+    magenta = '\033[35m'
+    cyan    = '\033[36m'
+    white   = '\033[37m'      #standard
+    gray    = '\033[90m'
+    brightred     = '\033[91m'
+    brightgreen   = '\033[92m'
+    brightyellow  = '\033[93m'
+    brightblue    = '\033[94m'
+    brightmagenta = '\033[95m'
+    brightcyan    = '\033[96m'
+    brightwhite   = '\033[97m'
+    normal   = '\033[0m'
+    WARNING  = brightyellow   #defined colors for messages
+    ERROR    = brightred
+    GOOD     = green
+    VERYGOOD = brightgreen
+
+class bgcolor:
+    black   = '\033[40m'      #standard
+    red     = '\033[41m'
+    green   = '\033[42m'
+    yellow  = '\033[43m'
+    blue    = '\033[44m'
+    magenta = '\033[45m'
+    cyan    = '\033[46m'
+    white   = '\033[47m'
+    gray    = '\033[100m'
+    brightred     = '\033[101m'
+    brightgreen   = '\033[102m'
+    brightyellow  = '\033[103m'
+    brightblue    = '\033[104m'
+    brightmagenta = '\033[105m'
+    brightcyan    = '\033[106m'
+    brightwhite   = '\033[107m'
+    normal   = '\033[0m'
+
+#-------------functions-------------------------------------------------
 
 def readFileContent(filename):                              # function to read a file with error handling
     try:
@@ -37,7 +82,7 @@ def readFileContent(filename):                              # function to read a
         byte_content=bytearray(file1.read(-1))
         file1.close()
     except FileNotFoundError:
-        print("ERROR: FileNotFound", filename)
+        print(txtcolor.ERROR + "ERROR: FileNotFound", filename, "" + txtcolor.normal)
         input("Abort!")
         sys.exit()
     return byte_content
@@ -56,10 +101,10 @@ def searchForFreeSpace(byte_content_BIOS, freeSpaceSize):      # function to sea
     blocksize = 32            # minimum block size of free space (must be a multible of 16)
     freeSpaceList = []        # generate a empty list
     
-    newRow = False    # save lines of output with list in 2 coloumns
-    rowNumers = 3
-    rowCount = 1
-    searchpattern = [0x00, 0xFF, 0xCF]      #search for blocks of contiguous bytes of these values (0xCF is in Vadem BIOS types)
+    newRow = False
+    colNumers = 3    # save lines of output with list in coloumns
+    colCount = 1
+    searchpattern = [0x00, 0xFF, 0xCF]      #search for blocks of contiguous bytes of these values
     patternNumber = 0
 
     while patternNumber < len(searchpattern):
@@ -76,14 +121,14 @@ def searchForFreeSpace(byte_content_BIOS, freeSpaceSize):      # function to sea
        
                 if countFreeROM >= blocksize:
                     print("   ", format(countFreeROM, '>6'), "byte of", format(searchpattern[patternNumber], '#04X'), "at", format(startblock, '#7x'), end='')
-                    if rowCount == rowNumers:
+                    if colCount == colNumers:
                         print("\n", end='')
                         newRow = False
-                        rowCount = 1
+                        colCount = 1
                     else:
                         print("\t", end='')
                         newRow = True
-                        rowCount += 1
+                        colCount += 1
                     if countFreeROM >= freeSpaceSize:
                         #print("   space size found at offset", hex(startblock))
                         freeSpaceList.append(startblock)
@@ -97,11 +142,16 @@ def searchForFreeSpace(byte_content_BIOS, freeSpaceSize):      # function to sea
 
     if newRow: print("\n", end='')
     freeSpaceList.sort()
-    print("   Found", len(freeSpaceList), "free space blocks to place", freeSpaceSize, "bytes at", list(map(hex, freeSpaceList)))
+    if len(freeSpaceList) == 0:
+        outputcolor = txtcolor.ERROR
+    else:
+        outputcolor = txtcolor.GOOD
+    print(outputcolor + "   Found", len(freeSpaceList), "free space blocks to place", freeSpaceSize, "bytes at" , list(map(hex, freeSpaceList)), "" + txtcolor.normal)
+    #print("   Found", len(freeSpaceList), "free space blocks to place", freeSpaceSize, "bytes at" , list(map(hex, freeSpaceList)))
     return freeSpaceList
 
 
-def searchForBiosCall(byte_content_BIOS):
+def searchForBiosCall(byte_content_BIOS, exitOnError):
     searchpattern = [bytearray(b'\xBB\x00\xC8\xBA\x00\xE0\xE8'),         "Award",           #search pattern for Award BIOS (Bondewell B310)
                      bytearray(b'\xB8\x00\xC0\xBA\x80\xC7\xB7\x02\xE8'), "Pegasus",         #search pattern for Pegasus BIOS (Olivetti)
                      bytearray(b'\xBE\x00\xC8\xB9\x00\xE0\xB2\x00\xE8'), "Phoenix 1987",    #search pattern for Phoenix BIOS
@@ -126,7 +176,7 @@ def searchForBiosCall(byte_content_BIOS):
             if byte_content_BIOS[i] == searchpattern[patternNumber][patternpossition]:
                 patternpossition += 1
                 if patternpossition == patternlength:
-                    print("   Call found with pattern for", searchpattern[patternNumber+1], "BIOS at", hex(i))
+                    print(txtcolor.GOOD + "   Call found with pattern for", searchpattern[patternNumber+1], "BIOS at", hex(i), "" + txtcolor.normal)
                     offsetCall = i
                     patternFound += 1
                     patternpossition = 0
@@ -137,16 +187,18 @@ def searchForBiosCall(byte_content_BIOS):
         patternNumber += 2
 
     if patternFound == 0:
-        print("   No known pattern found for a call in BIOS. Manual disassembling and search required!")
-        print("   You can send the BIOS file to the developer to improve this script.")
-        input("   Abort!")
-        sys.exit()
+        print(txtcolor.ERROR + "   No known pattern found for a call in BIOS. Manual disassembling and search required!" + txtcolor.normal)
+        if exitOnError:
+            print("   You can send the BIOS file to the developer to improve this script.")
+            input("   Abort!")
+            sys.exit()
     
     if patternFound > 1:
-        print("   Found too many hits for a call in BIOS. Manual disassembling and search required!")
-        print("   You can send the BIOS file to the developer to improve this script.")
-        input("   Abort!")
-        sys.exit()
+        print(txtcolor.ERROR + "   Found too many hits for a call in BIOS. Manual disassembling and search required!" + txtcolor.normal)
+        if exitOnError:
+            print("   You can send the BIOS file to the developer to improve this script.")
+            input("   Abort!")
+            sys.exit()
         
     return offsetCall
 
@@ -158,7 +210,7 @@ def insertArrayIntoArray(byte_content_BIOS, byte_content_injection, position):
     print("   inserting", len(byte_content_injection), "byte code in", len(byte_content_BIOS), "byte of BIOS ROM, at position", hex(position))
 
     if position + len(byte_content_injection) > len(byte_content_BIOS):
-        print("   ERROR: offset + option ROM length to long for BIOS")
+        print(txtcolor.ERROR + "   ERROR: offset + option ROM length to long for BIOS" + txtcolor.normal)
         input("   Abort!")
         sys.exit()
 
@@ -166,7 +218,7 @@ def insertArrayIntoArray(byte_content_BIOS, byte_content_injection, position):
 
         if byte_content_BIOS[position] != FirstSameByte:
             if not warning:
-                print("   WARNING: found content at: ", end='')
+                print(txtcolor.WARNING + "   WARNING: found content at: ", end='')
                 warning = True
             print(position, " ", end='')
 
@@ -175,10 +227,14 @@ def insertArrayIntoArray(byte_content_BIOS, byte_content_injection, position):
         i += 1
         position += 1
 
-    if warning: print(" ")    # if a warning was printed make a new line at the end
+    if warning: print(" " + txtcolor.normal)    # if a warning was printed make a new line at the end
     
     return byte_content_BIOS
 
+
+#----------------------start code here--------------------------------------
+
+os.system("")     # to activate colored output
 workdir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(workdir)
 print("Working directory =", workdir)
@@ -226,7 +282,7 @@ byte_content_OptROM  = readFileContent("OptROM.BIN")
 # STEP 3 ------------------------------------------------
 print("Search for the SearchForOptionRom call in the BIOS...")
 
-offsetCall = searchForBiosCall(byte_content_BIOS)
+offsetCall = searchForBiosCall(byte_content_BIOS, True)
 
 
 # STEP 4 ------------------------------------------------
@@ -381,7 +437,11 @@ byte_content_BIOS[offsetSubFunc + 13] = checksumaddon & 0xFF
 
 # check new checksum
 checksum = calcChecksum(byte_content_BIOS)
-print("   New corrected checksum is now", hex(checksum & 0xFF))
+if checksum == checksumOrg:
+    outputcolor = txtcolor.GOOD
+else:
+    outputcolor = txtcolor.WARNING
+print(outputcolor + "   New corrected checksum is now", hex(checksum & 0xFF),"" + txtcolor.normal)
 
 
 
@@ -416,4 +476,4 @@ if twoChipBios:
 
 
 
-input("finished!")
+input(txtcolor.GOOD + "finished!" + txtcolor.normal)
