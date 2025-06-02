@@ -23,7 +23,6 @@ WARNING: Use this script at your own risk. It is currently not well tested. Have
 The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
-   * creating a library to use the same functions in both scripts
    * check if the Option ROM is already insert in the BIOS
 
 Changes:
@@ -38,6 +37,8 @@ Changes:
    * third serach for empty space market as 0xCF for Vedem BIOS types <-- solved!
    * adding more BIOS search pattern... have found some ROMs with unknown pattern <-- solved!
    * recreating the original checksum of the BIOS ROM insted of a checksum of 0 <-- solved!
+   * creating a library to use the same functions in both scripts <-- deselected! (you must copy more than one file in the folder and it creates a pycache folder)
+   * adding some coloured output <-- solfed!
 
 
 ### Example output of the script is:
