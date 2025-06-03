@@ -17,7 +17,7 @@ byte_content_SubFunc = bytearray(b'\x60\x9C\x9A\x03\x00\x00\x00\x9D\x61\xE8\x00\
 #                                                       ^^^^^^^             ^^^^^^^     ^^^
 #                                             Segment of OptROM             |||||||     used for changing the checksum
 #                                                                           |||||||
-#                                                               distance to the orig. SubFunction
+#                                                               distance to the org. SubFunction
 #example:
 #f000:dc50    60            pusha
 #f000:dc51    9C            pushf
