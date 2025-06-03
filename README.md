@@ -16,7 +16,9 @@ With all these files in one directory you must only execute the script and you g
 
 Patch_BIOS_with_OptROM.py is the script to insert the option ROM into the BIOS ROM image.
 
-Analyse_many_BIOS_Files.py is a script to check all *.bin files in the same directory for the conditions to insert a option ROM. 
+Analyse_many_BIOS_Files.py is a script to check all *.bin files in the same directory for the conditions to insert a option ROM.
+
+These scripts run under Windows and Linux.
 
 WARNING: Use this script at your own risk. It is currently not well tested. Have a working backup of your original BIOS ROMs or keep the original ROMs and test the result with spare ROMs.
 
