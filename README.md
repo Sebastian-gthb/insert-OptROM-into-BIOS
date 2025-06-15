@@ -3,7 +3,7 @@ This Python code insert a Option ROM into a empty space in a BIOS ROM (for the e
 
 Status = finished and need to be tested with different types of BIOS
 
-The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs the script should automaticly search and check all conditions to place an option ROM in to the BIOS ROM.
+The Script was initial designed to implement the XTIDE ROM into a Bondwell B310 BIOS ROM. This works well. For other BIOS ROMs the script should automaticly search and check all conditions to place an option ROM into the BIOS ROM.
 The Script supporting automaticly search for the BIOS call to the function "SearchOptionRomAndCall". So we use this call to implement a new SubFunction that call the option ROM. This call came to the exact right time in the boot process to load option ROMs. The script supports Award, AMI, Phoenix, Pegasus, Vadem, Quadtel, Zenith and "Chips and Technologies" BIOS types. If you have found an unsupportet BIOS (error message = No known pattern found for a call in BIOS. Manual disassembling and search required!) feel free to contact me and i try to implement this.
 
 To run you need the following files:
@@ -40,7 +40,7 @@ Changes:
    * adding more BIOS search pattern... have found some ROMs with unknown pattern <-- solved!
    * recreating the original checksum of the BIOS ROM insted of a checksum of 0 <-- solved!
    * creating a library to use the same functions in both scripts <-- deselected! (you must copy more than one file in the folder and it creates a pycache folder)
-   * adding some coloured output <-- solfed!
+   * adding some coloured output <-- solved!
 
 
 ### Example output of the script is:
