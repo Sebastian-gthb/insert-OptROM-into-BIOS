@@ -263,7 +263,7 @@ if os.path.isfile("BIOS_LO.BIN"):
     file4.close()
 
 else:
-    print("Loding BIOS as one chip file...")
+    print("Loading BIOS as one chip file...")
     byte_content_BIOS = readFileContent("BIOS.BIN")
 
     twoChipBios = False   # flag for spliting BIOS in HI and LO part
@@ -274,7 +274,7 @@ print("   BIOS ROM size =", len(byte_content_BIOS), "byte. \t checksum =", hex(c
 
 
 # STEP 2 ------------------------------------------------
-print("Loding option ROM...")
+print("Loading option ROM...")
 
 byte_content_OptROM  = readFileContent("OptROM.BIN")
 
@@ -455,7 +455,7 @@ file6.close()
 
 # STEP 11 ------------------------------------------------
 if twoChipBios:
-    print("Split BIOS in to HI an LO file...")
+    print("Split BIOS into HI an LO file...")
 
     byte_content_BIOS_LO_new = bytearray()
     byte_content_BIOS_HI_new = bytearray()
