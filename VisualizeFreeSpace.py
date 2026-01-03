@@ -76,7 +76,7 @@ def visualizeFreeSpace(byte_content_BIOS):      # function to search for and vis
         for offset in range(1,blocksize-1):
             if byte_content_BIOS[i+offset]!=blockfirstbyte:
                 blockconsistent=False
-                offset=blocksize                         #stop the foor loop
+                offset=blocksize                         #stop the for loop
 
         color='\033[44m'
         symbol = 67
