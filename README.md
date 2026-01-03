@@ -18,6 +18,8 @@ Patch_BIOS_with_OptROM.py is the script to insert the option ROM into the BIOS R
 
 Analyse_many_BIOS_Files.py is a script to check all *.bin files in the same directory for the conditions to insert a option ROM.
 
+VisualizeFreeSpace.py is a script to show the BIOS ROM Image in blocks of free and not free blocks of 16 byte. It's only for visualization and is not necessary to do the job, but it helps to analyse the BIOS image for humans.
+
 These scripts run under Windows and Linux.
 
 WARNING: Use this script at your own risk. It is currently not well tested. Have a working backup of your original BIOS ROMs or keep the original ROMs and test the result with spare ROMs.
@@ -41,6 +43,7 @@ Changes:
    * recreating the original checksum of the BIOS ROM insted of a checksum of 0 <-- solved!
    * creating a library to use the same functions in both scripts <-- deselected! (you must copy more than one file in the folder and it creates a pycache folder)
    * adding some coloured output <-- solved!
+   * adding a script to visualize the BIOS ROM with free and not free blocks <-- solved!
 
 
 ### Example output of the script is:
