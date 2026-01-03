@@ -94,8 +94,6 @@ def visualizeFreeSpace(byte_content_BIOS):      # function to search for and vis
 
         block=color+chr(symbol)
         print(block,end='')
-        #print(color,chr(symbol),end='')
-
 
         i += blocksize
 
