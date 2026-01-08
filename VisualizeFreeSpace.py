@@ -66,10 +66,10 @@ def readFileContent(filename):                              # function to read a
 def visualizeFreeSpace(byte_content_BIOS):      # function to search for and visualize free space
     blocksize = 16            # minimum block size of free space (must be a multible of 16)
     
-    searchpattern = [0x00, 0xFF, 0xCF]      #search for blocks of contiguous bytes of these values
+    #searchpattern = [0x00, 0xFF, 0xCF]      #search for blocks of contiguous bytes of these values
     i = 0
 
-    while i < len(byte_content_BIOS):
+    while i+blocksize <= len(byte_content_BIOS):
         
         blockconsistent = True
         blockfirstbyte = byte_content_BIOS[i]
