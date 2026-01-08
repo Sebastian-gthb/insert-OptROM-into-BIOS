@@ -29,6 +29,7 @@ The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
    * check if the Option ROM is already insert in the BIOS
+   * try to relocate BIOS code blocks to get larger free space in the ROM image (thanks to wierd_w for this sugesstion)
 
 Changes:
    * calculating the jump destinations insted hard coded <-- solved!
