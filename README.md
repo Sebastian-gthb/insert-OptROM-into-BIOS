@@ -28,6 +28,7 @@ WARNING: Use this script at your own risk. It is currently not well tested. Have
 The idea, the solution and the code is from Sebastian-gthb.
 
 ToDo's:
+   * ensure that the new subroutine is not integrated into a free area of the option ROM, as otherwise the checksum of the option ROM will no longer be correct
    * check if the Option ROM is already insert in the BIOS
    * try to relocate BIOS code blocks to get larger free space in the ROM image (thanks to wierd_w for this sugesstion)
 
